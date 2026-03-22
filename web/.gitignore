@@ -1,0 +1,30 @@
+# ─── DEPENDENCIES ───
+node_modules/
+.pnp
+.pnp.js
+
+# ─── BUILD OUTPUT ───
+dist/
+dist-ssr/
+
+# ─── ENV FILES ───
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── VITE ───
+*.local
+
+# ─── LOGS ───
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── OS ───
+.DS_Store
+Thumbs.db

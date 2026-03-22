@@ -1,0 +1,41 @@
+# ─── DEPENDENCIES ───
+node_modules/
+
+# ─── EXPO ───
+.expo/
+.expo-shared/
+dist/
+
+# ─── NATIVE BUILD OUTPUT ───
+android/
+ios/
+*.apk
+*.aab
+*.ipa
+
+# ─── EAS ───
+.eas/
+
+# ─── ENV FILES ───
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── LOGS ───
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── METRO BUNDLER ───
+.metro-health-check*
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── FIREBASE ───
+google-services.json
+GoogleService-Info.plist
