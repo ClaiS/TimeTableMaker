@@ -1,0 +1,10 @@
+# server/.gitignore
+venv/
+.env
+__pycache__/
+*.pyc
+.paddleocr/
+~/.paddlepaddle/
+firebase-credentials.json
+uploads/
+*.log
