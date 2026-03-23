@@ -135,8 +135,8 @@ export default function TKBPage({ classes, setClasses }) {
                   // Tier label
                   cells.push(
                     <td key="tc" style={{ ...s.tierCell, background: ss.bg, borderLeft: `3px solid ${ss.bl}` }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>{t}</div>
-                      <div style={{ fontSize: 9, color: '#94A3B8', marginTop: 1 }}>{tier.s}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>{t}</div>
+                      <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{tier.s}</div>
                     </td>
                   )
 
@@ -169,20 +169,28 @@ export default function TKBPage({ classes, setClasses }) {
                           <div
                             style={{
                               ...s.block,
-                              background:    cancelled ? '#F1F5F9' : cl.bg,
+                              background:      cancelled ? '#F1F5F9' : cl.bg,
                               borderLeftColor: cancelled ? '#94A3B8' : cl.br,
                               opacity: cancelled ? .65 : 1,
+                              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                             }}
                             onMouseMove={e => onBlockMouseMove(found, e)}
                             onMouseLeave={onBlockMouseLeave}
                             onClick={() => setEditCls(found)}
                           >
-                            {makeup    && <div style={s.tagMakeup}>DẠY BÙ</div>}
-                            {cancelled && <div style={s.tagCancelled}>ĐÃ HỦY</div>}
-                            <div style={{ fontSize: 9, fontWeight: 700, color: cancelled ? '#94A3B8' : cl.br, marginBottom: 2, fontFamily: 'monospace' }}>{found.ma}</div>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: cancelled ? '#94A3B8' : cl.tx, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{found.ten}</div>
-                            <div style={{ fontSize: 9, color: cancelled ? '#CBD5E1' : cl.br, marginTop: 3, opacity: .8 }}>{found.phong}</div>
-                            <div style={{ fontSize: 8, color: '#94A3B8', marginTop: 1 }}>Lớp {found.lop}</div>
+                            {/* Top: status tag + ma mon */}
+                            <div>
+                              {makeup    && <div style={s.tagMakeup}>DẠY BÙ</div>}
+                              {cancelled && <div style={s.tagCancelled}>ĐÃ HỦY</div>}
+                              <div style={{ fontSize: 12, fontWeight: 700, color: cancelled ? '#94A3B8' : cl.br, fontFamily: 'monospace', lineHeight: 1.3 }}>{found.ma}</div>
+                            </div>
+                            {/* Middle: ten mon — largest, takes available space */}
+                            <div style={{ fontSize: 14, fontWeight: 800, color: cancelled ? '#94A3B8' : cl.tx, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', flex: 1, margin: '3px 0' }}>{found.ten}</div>
+                            {/* Bottom: phong + lop */}
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: cancelled ? '#CBD5E1' : cl.br, lineHeight: 1.3 }}>{found.phong}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: cancelled ? '#CBD5E1' : cl.tx, opacity: .75, marginTop: 1, lineHeight: 1.3 }}>Lớp {found.lop}</div>
+                            </div>
                           </div>
                         </td>
                       )
@@ -205,15 +213,15 @@ export default function TKBPage({ classes, setClasses }) {
             return (
               <div key={sk} style={{ ...s.lgItem, background: cl.bg, border: `1px solid ${cl.br}` }}>
                 <div style={{ ...s.lgDot, background: cl.br }} />
-                <span style={{ color: cl.tx, fontSize: 11, fontWeight: 600 }}>{sk}</span>
+                <span style={{ color: cl.tx, fontSize: 13, fontWeight: 600 }}>{sk}</span>
               </div>
             )
           })}
-          {hasMakeup    && <div style={{ ...s.lgItem, background: '#D1FAE5', border: '1px solid #059669' }}><div style={{ ...s.lgDot, background: '#059669' }} /><span style={{ color: '#064E3B', fontSize: 11, fontWeight: 600 }}>Dạy bù</span></div>}
-          {hasCancelled && <div style={{ ...s.lgItem, background: '#F1F5F9', border: '1px solid #94A3B8' }}><div style={{ ...s.lgDot, background: '#94A3B8' }} /><span style={{ color: '#475569', fontSize: 11, fontWeight: 600 }}>Đã hủy</span></div>}
-          <div style={{ ...s.lgItem, background: '#FFFBEB', border: '1px solid #FCD34D' }}><div style={{ ...s.lgDot, background: '#FCD34D' }} /><span style={{ color: '#92400E', fontSize: 11 }}>Sáng T1–6</span></div>
-          <div style={{ ...s.lgItem, background: '#F5F3FF', border: '1px solid #A78BFA' }}><div style={{ ...s.lgDot, background: '#A78BFA' }} /><span style={{ color: '#4C1D95', fontSize: 11 }}>Chiều T7–12</span></div>
-          <div style={{ ...s.lgItem, background: '#F0FDF4', border: '1px solid #6EE7B7' }}><div style={{ ...s.lgDot, background: '#6EE7B7' }} /><span style={{ color: '#064E3B', fontSize: 11 }}>Tối T13–15</span></div>
+          {hasMakeup    && <div style={{ ...s.lgItem, background: '#D1FAE5', border: '1px solid #059669' }}><div style={{ ...s.lgDot, background: '#059669' }} /><span style={{ color: '#064E3B', fontSize: 13, fontWeight: 600 }}>Dạy bù</span></div>}
+          {hasCancelled && <div style={{ ...s.lgItem, background: '#F1F5F9', border: '1px solid #94A3B8' }}><div style={{ ...s.lgDot, background: '#94A3B8' }} /><span style={{ color: '#475569', fontSize: 13, fontWeight: 600 }}>Đã hủy</span></div>}
+          <div style={{ ...s.lgItem, background: '#FFFBEB', border: '1px solid #FCD34D' }}><div style={{ ...s.lgDot, background: '#FCD34D' }} /><span style={{ color: '#92400E', fontSize: 13 }}>Sáng T1–6</span></div>
+          <div style={{ ...s.lgItem, background: '#F5F3FF', border: '1px solid #A78BFA' }}><div style={{ ...s.lgDot, background: '#A78BFA' }} /><span style={{ color: '#4C1D95', fontSize: 13 }}>Chiều T7–12</span></div>
+          <div style={{ ...s.lgItem, background: '#F0FDF4', border: '1px solid #6EE7B7' }}><div style={{ ...s.lgDot, background: '#6EE7B7' }} /><span style={{ color: '#064E3B', fontSize: 13 }}>Tối T13–15</span></div>
         </div>
       </div>
 
@@ -224,10 +232,10 @@ export default function TKBPage({ classes, setClasses }) {
         >
           {/* Coloured header */}
           <div style={{ ...s.tipHead, background: getColor(tooltip.cls).br }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.7)', fontFamily: 'monospace', marginBottom: 3 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontFamily: 'monospace', marginBottom: 3 }}>
               {tooltip.cls.ma} · {tooltip.cls.truong}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
               {tooltip.cls.ten}
             </div>
           </div>
@@ -251,7 +259,7 @@ export default function TKBPage({ classes, setClasses }) {
           </div>
 
           {/* Hint */}
-          <div style={{ padding: '7px 14px', borderTop: '1px solid rgba(255,255,255,.08)', fontSize: 10, color: 'rgba(255,255,255,.4)', textAlign: 'center' }}>
+          <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,.08)', fontSize: 12, color: 'rgba(255,255,255,.4)', textAlign: 'center' }}>
             Nhấn vào buổi dạy để sửa / xóa
           </div>
         </div>
@@ -265,33 +273,31 @@ export default function TKBPage({ classes, setClasses }) {
 }
 
 const s = {
-  page:      { flex: 1, display: 'flex', flexDirection: 'column', gap: 14, animation: 'fadeIn .25s ease' },
-  topBar:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: 10, padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.06)', flexWrap: 'wrap', gap: 10 },
-  weekNav:   { display: 'flex', alignItems: 'center', gap: 10 },
-  navBtn:    { width: 32, height: 32, border: '1px solid #E5E7EB', background: '#F8FAFC', borderRadius: 7, cursor: 'pointer', fontSize: 16, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  todayBtn:  { padding: '6px 12px', border: '1px solid #E5E7EB', background: '#fff', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#64748B' },
-  weekRange: { fontSize: 13, fontWeight: 700, color: '#0F172A' },
-  weekSub:   { fontSize: 11, color: '#DC2626', fontWeight: 600 },
-  btnAdd:    { padding: '8px 16px', background: '#DC2626', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' },
+  page:      { flex: 1, display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn .25s ease' },
+  topBar:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: 12, padding: '12px 18px', boxShadow: '0 1px 3px rgba(0,0,0,.06)', flexWrap: 'wrap', gap: 10 },
+  weekNav:   { display: 'flex', alignItems: 'center', gap: 12 },
+  navBtn:    { width: 36, height: 36, border: '1px solid #E5E7EB', background: '#F8FAFC', borderRadius: 8, cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  todayBtn:  { padding: '7px 16px', border: '1px solid #E5E7EB', background: '#fff', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#64748B' },
+  weekRange: { fontSize: 15, fontWeight: 700, color: '#0F172A' },
+  weekSub:   { fontSize: 13, color: '#DC2626', fontWeight: 600 },
+  btnAdd:    { padding: '9px 20px', background: '#DC2626', border: 'none', borderRadius: 9, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
   gridWrap:  { background: '#fff', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,.06)', overflow: 'hidden', flex: 1 },
-  table:     { width: '100%', minWidth: 900, borderCollapse: 'collapse' },
-  th:        { padding: '10px 6px', textAlign: 'center', borderBottom: '2px solid #DC2626', borderRight: '1px solid #E5E7EB', color: '#374151', position: 'sticky', top: 0, background: '#FAFAFA', zIndex: 5, fontSize: 12 },
+  table:     { width: '100%', minWidth: 960, borderCollapse: 'collapse' },
+  th:        { padding: '13px 8px', textAlign: 'center', borderBottom: '2px solid #DC2626', borderRight: '1px solid #E5E7EB', color: '#374151', position: 'sticky', top: 0, background: '#FAFAFA', zIndex: 5, fontSize: 14 },
   thToday:   { background: '#FEF2F2', color: '#DC2626' },
-  td:        { borderRight: '1px solid #F3F4F6', borderBottom: '1px solid #F3F4F6', position: 'relative', height: 40 },
-  tierCell:  { width: 64, textAlign: 'center', padding: '4px 2px', borderRight: '1px solid #E5E7EB', verticalAlign: 'middle', height: 40 },
-  brkTier:   { background: '#FFFDE7', borderBottom: '1px dashed #FCD34D', padding: '0 4px', textAlign: 'center', height: 8 },
-  brkCell:   { background: '#FFFDE7', borderBottom: '1px dashed #FCD34D', fontSize: 8, color: '#B45309', textAlign: 'center', padding: 0, height: 8 },
-  // KEY FIX: no explicit height — position:absolute + inset fills cell automatically
-  block:     { position: 'absolute', inset: '2px 3px', borderRadius: 7, padding: '5px 7px', cursor: 'pointer', overflow: 'hidden', borderLeft: '3px solid', transition: 'box-shadow .12s, opacity .15s' },
-  tagMakeup:    { fontSize: 8, fontWeight: 700, color: '#059669', marginBottom: 2 },
-  tagCancelled: { fontSize: 8, fontWeight: 700, color: '#94A3B8', marginBottom: 2 },
-  legend:    { display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 14px', borderTop: '1px solid #F3F4F6' },
-  lgItem:    { display: 'flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 6 },
-  lgDot:     { width: 10, height: 10, borderRadius: 3, flexShrink: 0 },
-  // Tooltip
-  tip:       { position: 'fixed', zIndex: 9999, background: '#1E293B', borderRadius: 12, width: 264, boxShadow: '0 16px 48px rgba(0,0,0,.5)', overflow: 'hidden', pointerEvents: 'none' },
-  tipHead:   { padding: '11px 14px' },
-  tipRow:    { display: 'flex', justifyContent: 'space-between', gap: 10, padding: '3px 14px', borderBottom: '1px solid rgba(255,255,255,.06)' },
-  tipLbl:    { color: 'rgba(255,255,255,.5)', fontSize: 11, flexShrink: 0 },
-  tipVal:    { fontWeight: 600, fontSize: 11, textAlign: 'right', color: '#fff' },
+  td:        { borderRight: '1px solid #F3F4F6', borderBottom: '1px solid #F3F4F6', position: 'relative', height: 50 },
+  tierCell:  { width: 74, textAlign: 'center', padding: '4px 2px', borderRight: '1px solid #E5E7EB', verticalAlign: 'middle', height: 50 },
+  brkTier:   { background: '#FFFDE7', borderBottom: '1px dashed #FCD34D', padding: '0 4px', textAlign: 'center', height: 10 },
+  brkCell:   { background: '#FFFDE7', borderBottom: '1px dashed #FCD34D', fontSize: 10, color: '#B45309', textAlign: 'center', padding: 0, height: 10 },
+  block:     { position: 'absolute', inset: '2px 3px', borderRadius: 8, padding: '7px 9px', cursor: 'pointer', overflow: 'hidden', borderLeft: '4px solid', transition: 'box-shadow .12s, opacity .15s' },
+  tagMakeup:    { fontSize: 10, fontWeight: 700, color: '#059669', marginBottom: 2 },
+  tagCancelled: { fontSize: 10, fontWeight: 700, color: '#94A3B8', marginBottom: 2 },
+  legend:    { display: 'flex', flexWrap: 'wrap', gap: 7, padding: '12px 16px', borderTop: '1px solid #F3F4F6' },
+  lgItem:    { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 7 },
+  lgDot:     { width: 11, height: 11, borderRadius: 3, flexShrink: 0 },
+  tip:       { position: 'fixed', zIndex: 9999, background: '#1E293B', borderRadius: 13, width: 290, boxShadow: '0 16px 48px rgba(0,0,0,.5)', overflow: 'hidden', pointerEvents: 'none' },
+  tipHead:   { padding: '13px 16px' },
+  tipRow:    { display: 'flex', justifyContent: 'space-between', gap: 10, padding: '5px 16px', borderBottom: '1px solid rgba(255,255,255,.06)' },
+  tipLbl:    { color: 'rgba(255,255,255,.5)', fontSize: 13, flexShrink: 0 },
+  tipVal:    { fontWeight: 600, fontSize: 13, textAlign: 'right', color: '#fff' },
 }

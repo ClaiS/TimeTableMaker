@@ -2,16 +2,17 @@ import React, { useState } from 'react'
 import { SCHOOL_LIST, SCHOOL_MAP, gid } from '../shared/data.js'
 
 const SCHOOL_KEYWORDS = {
-  HUTECH: ['hutech', 'công nghệ tp.hcm', 'công nghệ thành phố'],
-  BKU:    ['bku', 'bách khoa hcm', 'hcmut'],
-  UIT:    ['uit', 'công nghệ thông tin'],
-  UEL:    ['uel', 'kinh tế - luật'],
-  HCMUTE: ['hcmute', 'sư phạm kỹ thuật'],
-  TDTU:   ['tdtu', 'tôn đức thắng'],
-  HUST:   ['hust', 'bách khoa hà nội'],
-  NEU:    ['neu', 'kinh tế quốc dân'],
-  CTU:    ['ctu', 'cần thơ'],
-  RMIT:   ['rmit'],
+  HUTECH:  ['hutech', 'công nghệ tp.hcm', 'công nghệ thành phố'],
+  BKU:     ['bku', 'bách khoa hcm', 'hcmut'],
+  UIT:     ['uit', 'công nghệ thông tin'],
+  UEL:     ['uel', 'kinh tế - luật'],
+  HCMUTE:  ['hcmute', 'sư phạm kỹ thuật'],
+  TDTU:    ['tdtu', 'tôn đức thắng'],
+  HCMUAF:  ['hcmuaf', 'nông lâm'],
+  UEF:     ['uef', 'kinh tế tài chính'],
+  VLU:     ['vlu', 'văn lang'],
+  HUI:     ['hui', 'công nghiệp tp'],
+  HCMUS:   ['hcmus', 'khoa học tự nhiên'],
 }
 
 function detectSchool(name) {

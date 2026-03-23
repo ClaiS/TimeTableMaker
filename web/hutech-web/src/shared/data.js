@@ -11,12 +11,6 @@ export const SCHOOL_LIST = [
   { key: 'VLU',     full: 'VLU – ĐH Văn Lang',                      bg: '#ECFDF5', br: '#16A34A', tx: '#14532D' },
   { key: 'HUI',     full: 'HUI – ĐH Công nghiệp TP.HCM',            bg: '#FDF4FF', br: '#A21CAF', tx: '#4A044E' },
   { key: 'HCMUS',   full: 'HCMUS – ĐH Khoa học Tự nhiên',           bg: '#ECFEFF', br: '#0891B2', tx: '#164E63' },
-  { key: 'HUST',    full: 'HUST – ĐH Bách Khoa Hà Nội',             bg: '#EFF6FF', br: '#1D4ED8', tx: '#1E3A8A' },
-  { key: 'NEU',     full: 'NEU – ĐH Kinh tế Quốc dân',              bg: '#F0FDF4', br: '#15803D', tx: '#14532D' },
-  { key: 'PTIT',    full: 'PTIT – Học viện CN Bưu chính Viễn thông',bg: '#ECFDF5', br: '#059669', tx: '#022C22' },
-  { key: 'DUT',     full: 'DUT – ĐH Duy Tân (Đà Nẵng)',             bg: '#FFFBEB', br: '#B45309', tx: '#451A03' },
-  { key: 'CTU',     full: 'CTU – ĐH Cần Thơ',                       bg: '#FFF7ED', br: '#C2410C', tx: '#7C2D12' },
-  { key: 'RMIT',    full: 'RMIT University Vietnam',                 bg: '#FEF2F2', br: '#B91C1C', tx: '#7F1D1D' },
   { key: 'OTHER',   full: 'Trường khác / Nhập tay',                  bg: '#F1F5F9', br: '#64748B', tx: '#1E293B' },
 ]
 

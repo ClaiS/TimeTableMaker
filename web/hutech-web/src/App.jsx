@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Sidebar from './components/Sidebar.jsx'
 import TKBPage from './pages/TKBPage.jsx'
 import FreePage from './pages/FreePage.jsx'
@@ -7,10 +7,51 @@ import NotifPage from './pages/NotifPage.jsx'
 import { INIT_CLASSES } from './shared/data.js'
 
 const PAGE_TITLES = {
-  tkb:    '📅  Thời Khóa Biểu',
-  free:   '🕐  Lịch Trống',
-  upload: '📤  Cập Nhật TKB',
-  notif:  '🔔  Thông Báo',
+  tkb:    'Thời Khóa Biểu',
+  free:   'Lịch Trống',
+  upload: 'Cập Nhật TKB',
+  notif:  'Thông Báo',
+}
+
+const PAGE_ICONS = {
+  tkb: '📅', free: '🕐', upload: '📤', notif: '🔔',
+}
+
+// Detect current semester from class data
+// Returns the hk value of the class whose date range is closest to today
+function detectSemester(classes) {
+  if (!classes.length) return null
+  const today = new Date()
+  // Group by hk, count classes
+  const hkCount = {}
+  classes.forEach(c => { hkCount[c.hk] = (hkCount[c.hk] || 0) + 1 })
+  // Return hk with most classes (most likely current semester)
+  return Object.entries(hkCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+}
+
+// Get next upcoming class for banner
+function getNextClass(classes) {
+  const now = new Date()
+  const todayDow = now.getDay() === 0 ? 7 : now.getDay() // 1=Mon..7=Sun
+  const todayThu = todayDow + 1 // our thu: 2=Mon..8=Sun
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+
+  // Find classes today that haven't started yet, or soonest this week
+  const active = classes.filter(c => c.status !== 'cancelled')
+  if (!active.length) return null
+
+  // Sort by (days from today, then start tier)
+  const ranked = active.map(c => {
+    let daysAhead = c.thu - todayThu
+    if (daysAhead < 0) daysAhead += 7
+    // If same day, check if already passed
+    const startParts = (c.startTime || '07:30').split(':')
+    const startMin = parseInt(startParts[0]) * 60 + parseInt(startParts[1])
+    if (daysAhead === 0 && startMin < nowMin) daysAhead = 7
+    return { ...c, daysAhead }
+  }).sort((a, b) => a.daysAhead - b.daysAhead || a.tb - b.tb)
+
+  return ranked[0] || null
 }
 
 export default function App() {
@@ -18,28 +59,39 @@ export default function App() {
   const [classes, setClasses] = useState(INIT_CLASSES)
   const [notifBanner, setNotifBanner] = useState(true)
 
+  const semester = useMemo(() => detectSemester(classes), [classes])
+  const nextClass = useMemo(() => getNextClass(classes), [classes])
+
+  const bannerText = nextClass
+    ? `Sắp tới: ${nextClass.ten} · Tiết ${nextClass.tb}–${nextClass.tk} · ${nextClass.phong}`
+    : 'Không có lịch dạy sắp tới'
+
   return (
     <div style={s.root}>
       <Sidebar active={tab} onChange={setTab} />
 
       <div style={s.main}>
-        {/* Topbar */}
+        {/* Topbar — white background, subtle border */}
         <div style={s.topbar}>
           <div style={s.topbarLeft}>
+            <span style={s.pageIcon}>{PAGE_ICONS[tab]}</span>
             <span style={s.topbarTitle}>{PAGE_TITLES[tab]}</span>
           </div>
           <div style={s.topbarRight}>
-            <span style={s.topBadge}>GV: Trần Văn A</span>
-            <span style={s.topBadge}>HK2 2025–2026</span>
-            <span style={{ cursor: 'pointer', fontSize: 18 }} onClick={() => setTab('notif')} title="Thông báo">🔔</span>
+            {semester && (
+              <span style={s.semBadge}>{semester}</span>
+            )}
+            <button style={s.notifBtn} onClick={() => setTab('notif')} title="Thông báo">
+              🔔
+            </button>
           </div>
         </div>
 
-        {/* Notification banner */}
-        {notifBanner && (
+        {/* Notification banner — soft amber, not jarring */}
+        {notifBanner && nextClass && (
           <div style={s.notifBanner}>
-            <span>🔔</span>
-            <span style={{ flex: 1 }}><strong>Nhắc nhở:</strong> Ngày mai 7h30 · Phân tích Thiết kế Hệ thống · E1-07.08</span>
+            <span style={s.bannerIcon}>📌</span>
+            <span style={s.bannerText}>{bannerText}</span>
             <button style={s.bannerClose} onClick={() => setNotifBanner(false)}>✕</button>
           </div>
         )}
@@ -58,22 +110,46 @@ export default function App() {
 
 const s = {
   root: { display: 'flex', minHeight: '100vh' },
-  main: { marginLeft: 220, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 },
+  main: { marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 },
+
+  // Topbar: white with subtle bottom border — không chói
   topbar: {
-    background: '#DC2626', color: '#fff',
-    padding: '0 24px', height: 56,
+    background: '#fff',
+    borderBottom: '1.5px solid #E5E7EB',
+    padding: '0 28px', height: 62,
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     position: 'sticky', top: 0, zIndex: 50,
-    boxShadow: '0 2px 8px rgba(220,38,38,.35)',
   },
-  topbarLeft: { display: 'flex', alignItems: 'center', gap: 12 },
-  topbarTitle: { fontSize: 16, fontWeight: 700, letterSpacing: -.2 },
-  topbarRight: { display: 'flex', alignItems: 'center', gap: 10 },
-  topBadge: { background: 'rgba(255,255,255,.2)', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 },
+  topbarLeft:  { display: 'flex', alignItems: 'center', gap: 10 },
+  pageIcon:    { fontSize: 22 },
+  topbarTitle: { fontSize: 20, fontWeight: 700, color: '#0F172A', letterSpacing: -.3 },
+  topbarRight: { display: 'flex', alignItems: 'center', gap: 12 },
+  semBadge: {
+    background: '#F1F5F9', color: '#475569',
+    padding: '5px 14px', borderRadius: 20,
+    fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0',
+  },
+  notifBtn: {
+    width: 38, height: 38, borderRadius: 10,
+    background: '#F8FAFC', border: '1px solid #E5E7EB',
+    fontSize: 18, cursor: 'pointer', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  // Banner: soft amber — nhẹ nhàng, không chói
   notifBanner: {
-    background: '#1D4ED8', color: '#fff',
-    padding: '9px 20px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 12,
+    background: '#FFFBEB',
+    borderBottom: '1px solid #FDE68A',
+    padding: '11px 28px',
+    display: 'flex', alignItems: 'center', gap: 10,
   },
-  bannerClose: { background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', opacity: .8, padding: '2px 4px' },
-  content: { padding: '20px 24px', flex: 1, overflowY: 'auto' },
+  bannerIcon: { fontSize: 16, flexShrink: 0 },
+  bannerText: { flex: 1, fontSize: 14, color: '#92400E', fontWeight: 500 },
+  bannerClose: {
+    background: 'none', border: 'none',
+    color: '#B45309', fontSize: 18, cursor: 'pointer',
+    opacity: .7, padding: '2px 4px', lineHeight: 1,
+  },
+
+  content: { padding: '22px 28px', flex: 1, overflowY: 'auto' },
 }

@@ -4,7 +4,7 @@ services:
     container_name: timetablemaker_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: timetablemaker
+      POSTGRES_DB: timetablemaker_db
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d timetablemaker"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d timetablemaker_db"]
       interval: 10s
       timeout: 5s
       retries: 5
