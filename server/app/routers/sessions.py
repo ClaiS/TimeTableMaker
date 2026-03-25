@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 
+
 from app.database import get_db
 from app.models.models import TeachingSession
 from app.schemas import SessionCreate, SessionUpdate, SessionStatusUpdate, SessionResponse

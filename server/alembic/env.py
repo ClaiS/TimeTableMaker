@@ -1,9 +1,11 @@
 from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
+from sqlalchemy import create_engine, pool
 from sqlalchemy import pool
-
 from alembic import context
+from app.database import Base
+from app.models import models
+
+from sqlalchemy.orm import DeclarativeBase
 
 import os
 import sys
@@ -14,7 +16,12 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.database import Base
-from app.models import models  # noqa
+from app.models import models as _m
+import app.models.models as _models 
+
+_m.TeachingSession.__bases__ 
+class Base(DeclarativeBase):
+    pass
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -70,18 +77,14 @@ def run_migrations_online() -> None:
     """
 
     db_url = os.getenv("DATABASE_URL", "").replace("postgresql+asyncpg", "postgresql+psycopg2")
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        url=db_url,
-        poolclass=pool.NullPool,
-    )
+    
+    connectable = create_engine(db_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata
         )
-
         with context.begin_transaction():
             context.run_migrations()
 

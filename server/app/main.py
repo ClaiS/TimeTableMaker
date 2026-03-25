@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.database import engine, Base
+from app.database import engine
+from app.base import Base
 import os
 
 # Import models để Alembic nhận diện
@@ -33,7 +34,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+from app.routers import sessions
+app.include_router(sessions.router)
 
 @app.get("/health")
 async def health():
