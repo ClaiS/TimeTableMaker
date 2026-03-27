@@ -4,6 +4,7 @@ import {
   Modal, StyleSheet, StatusBar, Platform, Dimensions,
   Alert, Switch, SafeAreaView, FlatList
 } from 'react-native';
+import UploadScreen from './UploadScreen';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -484,95 +485,6 @@ function FreeScreen({classes}) {
         ))}
       </ScrollView>
     </View>
-  );
-}
-
-// ════════════════════════════════════════
-// UPLOAD SCREEN
-// ════════════════════════════════════════
-function UploadScreen({onSuccess}) {
-  const [st2,setSt]=useState('idle');
-  const [progress,setProgress]=useState(0);
-  const [progressLabel,setProgressLabel]=useState('');
-  const [detected,setDetected]=useState('');
-  const doFake=()=>{
-    setSt('progress');setProgress(0);
-    [[300,25,'Đang tải file...'],[900,55,'Đọc cấu trúc...'],[1500,80,'Nhận diện tên trường...'],[2200,100,'Hoàn tất!']].forEach(([d,p,l])=>{
-      setTimeout(()=>{setProgress(p);if(l)setProgressLabel(l);},d);
-    });
-    setTimeout(()=>{setDetected('BKU');setSt('done');},2500);
-  };
-  const apply=()=>{
-    onSuccess([{id:gid(),ma:'CS101',ten:'Giải tích 1',phong:'B2-401',lop:'EE01',ss:35,tb:1,tk:5,hk:'HK2 25-26',thu:3,truong:detected||'BKU',status:'normal'}]);
-    setSt('idle');
-  };
-  const cl=SCHOOL_MAP[detected]||{bg:'#F1F5F9',br:'#64748B',tx:'#1E293B'};
-  return (
-    <ScrollView style={{flex:1,backgroundColor:C.bg}} contentContainerStyle={{padding:16}}>
-      <View style={st.infoBanner}>
-        <Text style={st.infoBannerTitle}>🔍  Nhận diện tên trường tự động</Text>
-        <Text style={st.infoBannerTx}>Hệ thống đọc góc trên trái file để nhận diện trường và gán màu phân loại.</Text>
-      </View>
-      {st2==='idle'&&(
-        <>
-          <TouchableOpacity style={st.uploadBtn} onPress={doFake}>
-            <Text style={{fontSize:52,marginBottom:8}}>📁</Text>
-            <Text style={st.uploadBtnTitle}>Upload file PDF / Excel</Text>
-            <Text style={st.uploadBtnSub}>Chọn từ bộ nhớ điện thoại</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[st.uploadBtn,{borderColor:C.green,backgroundColor:'#F0FDF4'}]} onPress={doFake}>
-            <Text style={{fontSize:52,marginBottom:8}}>📷</Text>
-            <Text style={[st.uploadBtnTitle,{color:C.green}]}>Chụp ảnh / Scan TKB</Text>
-            <Text style={st.uploadBtnSub}>Mở camera để chụp file thời khóa biểu</Text>
-            <View style={{marginTop:8,backgroundColor:'#FEF9C3',padding:6,borderRadius:6}}>
-              <Text style={{fontSize:11,color:'#92400E',textAlign:'center'}}>⚠️  Cần kết nối BE để OCR thật sự</Text>
-            </View>
-          </TouchableOpacity>
-        </>
-      )}
-      {st2==='progress'&&(
-        <View style={st.progressBox}>
-          <Text style={{fontSize:44,marginBottom:12}}>{progress<70?'⬆️':'🔍'}</Text>
-          <Text style={st.progressTitle}>{progressLabel}</Text>
-          <View style={st.progressTrack}>
-            <View style={[st.progressFill,{width:`${progress}%`}]}/>
-          </View>
-          <Text style={{fontSize:12,color:C.text3,marginTop:8}}>{progress}%</Text>
-        </View>
-      )}
-      {st2==='done'&&(
-        <View style={st.doneBox}>
-          <View style={{padding:20,backgroundColor:'#F0FDF4',alignItems:'center',borderRadius:12,marginBottom:12}}>
-            <Text style={{fontSize:40,marginBottom:6}}>✅</Text>
-            <Text style={{fontSize:16,fontWeight:'700',color:'#15803D'}}>Phân tích thành công!</Text>
-            <Text style={{fontSize:13,color:'#16A34A',marginTop:3}}>Trường: <Text style={{fontWeight:'700',color:cl.br}}>{detected}</Text> · 1 buổi mới</Text>
-          </View>
-          <View style={[{padding:14,borderRadius:10,borderLeftWidth:4,marginBottom:14},{backgroundColor:cl.bg,borderLeftColor:cl.br}]}>
-            <Text style={{fontSize:12,fontWeight:'700',color:cl.br,marginBottom:3}}>CS101 · {detected}</Text>
-            <Text style={{fontSize:14,fontWeight:'700',color:cl.tx,marginBottom:3}}>Giải tích 1</Text>
-            <Text style={{fontSize:12,color:cl.br}}>Thứ 3 · Tiết 1–5 · B2-401 · EE01</Text>
-          </View>
-          <View style={{flexDirection:'row',gap:8}}>
-            <TouchableOpacity style={[st.btnSecondary,{flex:1}]} onPress={()=>setSt('idle')}>
-              <Text style={st.btnSecondaryTx}>Bỏ qua</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[st.btnPrimary,{flex:2}]} onPress={apply}>
-              <Text style={st.btnPrimaryTx}>✓  Cập nhật TKB</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-      {/* School legend */}
-      <View style={{marginTop:16,backgroundColor:C.white,borderRadius:12,padding:14,borderWidth:1,borderColor:C.border}}>
-        <Text style={{fontSize:13,fontWeight:'700',color:C.text,marginBottom:10,textTransform:'uppercase',letterSpacing:0.5}}>Màu phân loại theo trường</Text>
-        {SCHOOL_LIST.slice(0,11).map(sch=>(
-          <View key={sch.key} style={[{flexDirection:'row',alignItems:'center',gap:8,padding:8,borderRadius:7,borderWidth:1,marginBottom:5},{backgroundColor:sch.bg,borderColor:sch.br}]}>
-            <View style={{width:10,height:10,borderRadius:5,backgroundColor:sch.br}}/>
-            <Text style={{fontSize:12,fontWeight:'700',color:sch.tx,flex:1}}>{sch.full}</Text>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
   );
 }
 

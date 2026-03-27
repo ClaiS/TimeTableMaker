@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.database import engine
-from app.base import Base
+from app.database import engine, Base
 import os
 
 # Import models để Alembic nhận diện
 from app.models import models  # noqa
+from app.routers import sessions, upload, detect
 
 
 @asynccontextmanager
@@ -26,16 +26,20 @@ app = FastAPI(
 )
 
 # CORS
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,exp://localhost:8081").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],   # dev: cho phép tất cả (mobile expo)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from app.routers import sessions
+
+# Routers
 app.include_router(sessions.router)
+app.include_router(upload.router)
+app.include_router(detect.router)
+
 
 @app.get("/health")
 async def health():
