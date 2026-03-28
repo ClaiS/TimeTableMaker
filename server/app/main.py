@@ -1,12 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine, Base
 import os
 
 # Import models để Alembic nhận diện
-from app.models import models  # noqa
-from app.routers import sessions, upload, detect
+from app.models import models
+from app.routers import sessions, upload
 
 
 @asynccontextmanager
@@ -35,10 +35,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
-app.include_router(sessions.router)
-app.include_router(upload.router)
-app.include_router(detect.router)
+# ─── ĐÂY LÀ CÁCH QUY CHUẨN ENDPOINT ──────────────────────────────────────────
+api_router = APIRouter(prefix="/api")
+
+# Gắn các router con vào router tổng
+api_router.include_router(sessions.router) # Sẽ thành /api/sessions
+api_router.include_router(upload.router)   # Sẽ thành /api/upload
+
+# Gắn router tổng vào app chính
+app.include_router(api_router)
 
 
 @app.get("/health")
