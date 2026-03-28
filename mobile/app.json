@@ -24,20 +24,25 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.anonymous.TimeTableMaker"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       [
-        "expo-camera",
+        "react-native-document-scanner-plugin",
         {
-          "cameraPermission": "Cho phép $(PRODUCT_NAME) dùng camera để scan bảng lịch dạy."
+          "cameraPermission": "Cho phép sử dụng camera để scan."
         }
       ],
-      "expo-document-picker"
+      "expo-document-picker",
+      "react-native-document-scanner-plugin"
     ]
   }
 }
