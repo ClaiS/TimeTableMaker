@@ -7,7 +7,6 @@ astor==0.8.1
 asyncpg==0.29.0
 attrdict==2.0.1
 babel==2.18.0
-bce-python-sdk==0.9.64
 beautifulsoup4==4.14.3
 blinker==1.9.0
 cachetools==7.0.5
@@ -39,7 +38,6 @@ httptools==0.7.1
 httpx==0.28.1
 idna==3.11
 ImageIO==2.37.3
-imgaug==0.4.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 kiwisolver==1.5.0
@@ -63,9 +61,7 @@ pdfminer.six==20231228
 
 pillow==10.3.0
 premailer==3.10.0
-protobuf==7.34.1
 psutil==7.2.2
-pyclipper==1.4.0
 pycparser==3.0
 pycryptodome==3.23.0
 pydantic==2.12.5
@@ -85,9 +81,7 @@ rarfile==4.2
 requests==2.32.5
 rich==14.3.3
 rich-toolkit==0.19.7
-scikit-image==0.26.0
 scipy==1.17.1
-shapely==2.1.2
 shellingham==1.5.4
 six==1.17.0
 soupsieve==2.8.3
@@ -103,17 +97,13 @@ ujson==5.12.0
 urllib3==2.6.3
 uvicorn==0.30.1
 uvloop==0.22.1
-visualdl==2.5.3
 watchfiles==1.1.1
 websockets==16.0
 Werkzeug==3.1.6
 xlrd==2.0.1
 
 
+google-generativeai
+
 pdfplumber
-paddleocr
-paddlepaddle
 numpy==1.26.4
-opencv-python<4.10.0.0
-opencv-contrib-python<4.10.0.0
-opencv-python-headless<4.10.0.0

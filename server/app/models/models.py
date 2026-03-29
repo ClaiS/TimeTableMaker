@@ -28,6 +28,7 @@ class TeachingSession(Base):
     # Thông tin môn học
     ma_mon         = Column(String(20),   nullable=False)        # CMP101
     ten_mon        = Column(String(255),  nullable=False)        # Tên học phần
+    tin_chi        = Column(SmallInteger)
 
     # Thông tin nhóm / lớp
     nhom           = Column(String(20))                          # 01, 11, 13
