@@ -67,14 +67,6 @@ export const DF_SHORT = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 let _nid = 100
 export const gid = () => ++_nid
 
-export const INIT_CLASSES = [
-  { id: 1, ma: 'CMP3019', ten: 'TH Phân tích TK hướng đối tượng', phong: 'E1-10.06/3', lop: '02/03', ss: 35, tb: 2, tk: 6, hk: 'HK2 25-26', thu: 2, truong: 'HUTECH', status: 'normal' },
-  { id: 2, ma: 'CMP184',  ten: 'Phân tích Thiết kế Hệ thống',      phong: 'E1-07.08',   lop: '02',    ss: 40, tb: 2, tk: 6, hk: 'HK2 25-26', thu: 3, truong: 'HUTECH', status: 'normal' },
-  { id: 3, ma: 'COS340',  ten: 'TH Phát triển PM mã nguồn mở',     phong: 'E1-10.06/1', lop: '01/01', ss: 38, tb: 2, tk: 6, hk: 'HK2 25-26', thu: 4, truong: 'HUTECH', status: 'normal' },
-  { id: 4, ma: 'CMP101',  ten: 'Công nghệ Phần mềm',               phong: 'E1-07.08',   lop: '01',    ss: 42, tb: 2, tk: 6, hk: 'HK2 25-26', thu: 5, truong: 'HUTECH', status: 'normal' },
-  { id: 5, ma: 'SHL',     ten: 'Sinh hoạt Lớp',                    phong: 'E2-03.02',   lop: 'S04',   ss: 30, tb: 7, tk: 9, hk: 'HK2 25-26', thu: 4, truong: 'HUTECH', status: 'normal' },
-  { id: 6, ma: 'CS001',   ten: 'Giải tích 1',                      phong: 'B2-401',     lop: 'EE01',  ss: 38, tb: 3, tk: 7, hk: 'HK2 25-26', thu: 6, truong: 'BKU',    status: 'makeup' },
-]
 
 // ─── DATE HELPERS ───
 export function getMonday(d) {
