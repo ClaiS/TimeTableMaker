@@ -78,6 +78,7 @@ class UploadPreviewResponse(BaseModel):
 class ConfirmResponse(BaseModel):
     file_id:        int
     sessions_saved: int
+    warnings:       list[str] = []
 
 
 # Key: file_id → ParseResult
@@ -165,7 +166,7 @@ async def confirm_upload(
     if not result:
         raise HTTPException(status_code=404, detail="Không tìm thấy preview. Hãy upload lại.")
 
-    q      = await db.execute(select(UploadedFile).where(UploadedFile.id == file_id))
+    q = await db.execute(select(UploadedFile).where(UploadedFile.id == file_id))
     db_file = q.scalar_one_or_none()
     if not db_file:
         raise HTTPException(status_code=404, detail="File record không tồn tại.")
@@ -178,9 +179,25 @@ async def confirm_upload(
             if 0 <= i < len(result.sessions)
         ]
 
-    # --- ĐẠI TU PHẦN INSERT ĐỂ LƯU DATE RANGES ---
+    # --- KHỞI TẠO BIẾN ĐẾM VÀ MẢNG CẢNH BÁO ---
     saved_count = 0
+    warnings = []
+
     for s in sessions_to_save:
+        # 1. KIỂM TRA TRÙNG LỊCH (Lấy 1 dòng đầu tiên để tránh lỗi MultipleResultsFound)
+        tiet_ket_thuc_du_kien = s.tiet_bat_dau + s.so_tiet - 1
+        overlap_query = select(TeachingSession).where(
+            TeachingSession.thu == s.thu,
+            TeachingSession.tiet_bat_dau <= tiet_ket_thuc_du_kien,
+            TeachingSession.tiet_ket_thuc >= s.tiet_bat_dau
+        )
+        overlap_result = await db.execute(overlap_query)
+        overlap_session = overlap_result.scalars().first() # Chỉ lấy 1 môn đầu tiên
+        
+        if overlap_session:
+            warnings.append(f"Môn '{s.ten_mon}' trùng giờ với '{overlap_session.ten_mon}' (Thứ {s.thu})")
+
+        # 2. LƯU MÔN HỌC MỚI VÀO DB BÌNH THƯỜNG
         new_session = TeachingSession(
             ma_mon        = s.ma_mon,
             ten_mon       = s.ten_mon,
@@ -199,21 +216,21 @@ async def confirm_upload(
             source_file_id= file_id,
         )
         db.add(new_session)
-        await db.flush() # Flush để PostgreSQL cấp ID cho new_session ngay lập tức
+        await db.flush() # Flush để PostgreSQL cấp ID ngay
+    
         saved_count += 1
 
-        # Xử lý insert Date Ranges nếu có
+        # 3. LƯU KHOẢNG THỜI GIAN (DATE RANGES)
         if hasattr(s, 'date_ranges') and s.date_ranges:
             for dr in s.date_ranges:
                 parts = [p.strip() for p in dr.split('-')]
                 try:
-                    # Chuyển chuỗi "DD/MM/YYYY" thành object datetime.date
                     if len(parts) == 2:
                         start_date = datetime.strptime(parts[0], "%d/%m/%Y").date()
                         end_date = datetime.strptime(parts[1], "%d/%m/%Y").date()
                     elif len(parts) == 1:
                         start_date = datetime.strptime(parts[0], "%d/%m/%Y").date()
-                        end_date = start_date # Nếu chỉ có 1 ngày
+                        end_date = start_date 
                     else:
                         continue
 
@@ -224,9 +241,9 @@ async def confirm_upload(
                     )
                     db.add(db_date)
                 except ValueError:
-                    # Bỏ qua nếu AI đọc sai format ngày (tránh crash toàn bộ loop)
-                    continue
+                    continue # Bỏ qua nếu lỗi format ngày
 
+    # 4. CẬP NHẬT TRẠNG THÁI FILE UPLOAD
     await db.execute(
         update(UploadedFile)
         .where(UploadedFile.id == file_id)
@@ -236,8 +253,8 @@ async def confirm_upload(
 
     _preview_cache.pop(file_id, None)
 
-    return ConfirmResponse(file_id=file_id, sessions_saved=saved_count)
-
+    # ĐÂY CHÍNH LÀ DÒNG BỊ THIẾU GÂY RA LỖI CHO BẠN
+    return ConfirmResponse(file_id=file_id, sessions_saved=saved_count, warnings=warnings)
 
 @router.delete("/{file_id}", status_code=204)
 async def cancel_upload(file_id: int, db: AsyncSession = Depends(get_db)):

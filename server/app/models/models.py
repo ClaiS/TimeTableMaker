@@ -2,6 +2,7 @@ from sqlalchemy import (
     Column, Integer, SmallInteger, String,
     Text, Computed, ForeignKey, TIMESTAMP, Date
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -58,7 +59,16 @@ class TeachingSession(Base):
     # Metadata
     created_at     = Column(TIMESTAMP, server_default=func.now())
     updated_at     = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    date_ranges_rel = relationship("SessionDateRange", backref="session", lazy="selectin", cascade="all, delete-orphan")
 
+    @property
+    def date_ranges(self):
+        ranges = []
+        for dr in self.date_ranges_rel:
+            start = dr.ngay_bat_dau.strftime("%d/%m/%Y")
+            end = dr.ngay_ket_thuc.strftime("%d/%m/%Y")
+            ranges.append(start if start == end else f"{start} - {end}")
+        return ranges
 
 class SessionDateRange(Base):
     __tablename__ = "session_date_ranges"

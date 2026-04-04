@@ -6,8 +6,9 @@ from datetime import datetime
 class SessionBase(BaseModel):
     ma_mon:        str           = Field(..., min_length=1, max_length=20)
     ten_mon:       str           = Field(..., min_length=1, max_length=255)
-    lop:           Optional[str] = Field(None, max_length=50)
     si_so:         Optional[int] = Field(None, ge=0)
+    ten_lop:       Optional[str] = Field(None, max_length=255)
+    nhom:          Optional[str] = Field(None, max_length=50)
     thu:           int           = Field(..., ge=2, le=8)
     tiet_bat_dau:  int           = Field(..., ge=1, le=15)
     tiet_ket_thuc: int           = Field(..., ge=1, le=15)
@@ -24,7 +25,8 @@ class SessionCreate(SessionBase):
 class SessionUpdate(BaseModel):
     ma_mon:        Optional[str] = Field(None, min_length=1, max_length=20)
     ten_mon:       Optional[str] = Field(None, min_length=1, max_length=255)
-    lop:           Optional[str] = Field(None, max_length=50)
+    ten_lop:       Optional[str] = Field(None, max_length=255)
+    nhom:          Optional[str] = Field(None, max_length=50)
     si_so:         Optional[int] = Field(None, ge=0)
     thu:           Optional[int] = Field(None, ge=2, le=8)
     tiet_bat_dau:  Optional[int] = Field(None, ge=1, le=15)
@@ -45,6 +47,7 @@ class SessionResponse(SessionBase):
     source_file_id: Optional[int]
     created_at:     datetime
     updated_at:     datetime
+    date_ranges:    list[str] = []
 
     class Config:
         from_attributes = True

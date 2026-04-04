@@ -1,3 +1,28 @@
+// Hàm kiểm tra xem targetDate có nằm trong khoảng dateRanges không
+export function isDateInRanges(targetDate, dateRanges) {
+  if (!dateRanges || dateRanges.length === 0) return true; 
+  
+  // Chuẩn hóa targetDate về 00:00:00
+  const tTime = new Date(targetDate).setHours(0, 0, 0, 0);
+
+  return dateRanges.some(rangeStr => {
+    const parts = rangeStr.split('-').map(s => s.trim());
+    
+    // Helper parse "DD/MM/YYYY" -> timestamp
+    const parseD = (str) => {
+      const [d, m, y] = str.split('/');
+      return new Date(y, m - 1, d).setHours(0, 0, 0, 0);
+    };
+
+    if (parts.length === 2) {
+      return tTime >= parseD(parts[0]) && tTime <= parseD(parts[1]);
+    } else if (parts.length === 1) {
+      return tTime === parseD(parts[0]);
+    }
+    return false;
+  });
+}
+
 // ─── SCHOOL COLORS ───
 export const SCHOOL_LIST = [
   { key: 'HUTECH',  full: 'HUTECH – ĐH Công nghệ TP.HCM',         bg: '#DBEAFE', br: '#2563EB', tx: '#1E3A8A' },
