@@ -28,7 +28,7 @@ import DocumentScanner from "react-native-document-scanner-plugin";
 const API_BASE = __DEV__ ? "http://127.0.0.1:8000" : "https://your-server.com";
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export default function UploadScreen(onSuccess) {
+export default function UploadScreen({onSuccess}) {
   const [status, setStatus] = useState("IDLE"); // IDLE | PROCESSING
   const [scannedImage, setScannedImage] = useState(null);
 
