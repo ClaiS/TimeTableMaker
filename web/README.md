@@ -41,14 +41,14 @@ src/
 
 ## Tính năng
 
-- ✅ Lưới TKB 7 cột × 15 tiết, hover hiện tooltip chi tiết
-- ✅ CRUD buổi dạy (thêm, sửa, xóa)
-- ✅ Màu sắc phân loại theo trường (22 trường)
-- ✅ Nhập tên trường tự do với gợi ý
-- ✅ Lịch trống tổng hợp tự động
-- ✅ Upload PDF/Excel với nhận diện tên trường
-- ✅ Push Notification (browser API)
-- ✅ Chuyển tuần ‹ ›
+- Lưới TKB 7 cột × 15 tiết, hover hiện tooltip chi tiết
+- CRUD buổi dạy (thêm, sửa, xóa)
+- Màu sắc phân loại theo trường (22 trường)
+- Nhập tên trường tự do với gợi ý
+- Lịch trống tổng hợp tự động
+- Upload PDF/Excel với nhận diện tên trường
+- Push Notification (browser API)
+- Chuyển tuần ‹ ›
 
 ## Tech Stack
 

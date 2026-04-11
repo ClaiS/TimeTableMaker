@@ -30,10 +30,10 @@ const PAGE_TITLES = {
 };
 
 const PAGE_ICONS = {
-  tkb: "📅",
-  free: "🕐",
-  upload: "📤",
-  notif: "🔔",
+  tkb: "",
+  free: "",
+  upload: "",
+  notif: "",
 };
 
 // Detect current semester from class data
@@ -113,20 +113,19 @@ export default function App() {
               style={s.notifBtn}
               onClick={() => setTab("notif")}
               title="Thông báo"
-            >
-              🔔
-            </button>
+            ></button>
           </div>
         </div>
 
         {/* Notification banner — soft amber, not jarring */}
         {notifBanner && nextClass && (
           <div style={s.notifBanner}>
-            <span style={s.bannerIcon}>📌</span>
+            <span style={s.bannerIcon}></span>
             <span style={s.bannerText}>{bannerText}</span>
-            <button style={s.bannerClose} onClick={() => setNotifBanner(false)}>
-              ✕
-            </button>
+            <button
+              style={s.bannerClose}
+              onClick={() => setNotifBanner(false)}
+            ></button>
           </div>
         )}
 

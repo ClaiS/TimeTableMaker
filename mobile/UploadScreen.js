@@ -28,7 +28,7 @@ import DocumentScanner from "react-native-document-scanner-plugin";
 const API_BASE = __DEV__ ? "http://127.0.0.1:8000" : "https://your-server.com";
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export default function UploadScreen({onSuccess}) {
+export default function UploadScreen(onSuccess) {
   const [status, setStatus] = useState("IDLE"); // IDLE | PROCESSING
   const [scannedImage, setScannedImage] = useState(null);
 
@@ -96,7 +96,10 @@ export default function UploadScreen({onSuccess}) {
         );
 
       // 2. Chốt lưu vào Database
-      const confirmRes = await fetch(`${API_BASE}/api/upload/confirm/${uploadData.file_id}`, { method: 'POST' });
+      const confirmRes = await fetch(
+        `${API_BASE}/api/upload/confirm/${uploadData.file_id}`,
+        { method: "POST" },
+      );
       const confirmData = await confirmRes.json();
       if (!confirmRes.ok) throw new Error("Lỗi khi lưu lịch");
 
@@ -122,12 +125,12 @@ export default function UploadScreen({onSuccess}) {
 
       if (confirmData.warnings && confirmData.warnings.length > 0) {
         Alert.alert(
-          'Đã lưu lịch dạy!', 
+          "Đã lưu lịch dạy!",
           `Hệ thống phát hiện có sự trùng lặp:\n- ${confirmData.warnings[0]}\n\nVui lòng kiểm tra trên Thời khóa biểu.`,
-          [{ text: 'Đã hiểu' }]
+          [{ text: "Đã hiểu" }],
         );
       } else {
-        Alert.alert('Hoàn tất!', 'Đã thêm lịch dạy mới thành công.');
+        Alert.alert("Hoàn tất!", "Đã thêm lịch dạy mới thành công.");
       }
 
       // Đẩy mảng data mới nhất về App.js
@@ -168,14 +171,14 @@ export default function UploadScreen({onSuccess}) {
               style={[styles.button, styles.btnScan]}
               onPress={handleScan}
             >
-              <Text style={styles.btnTextScan}>📸 Quét tài liệu (Camera)</Text>
+              <Text style={styles.btnTextScan}> Quét tài liệu (Camera)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, styles.btnFile]}
               onPress={handleUploadFile}
             >
-              <Text style={styles.btnTextFile}>📄 Tải file PDF / Excel</Text>
+              <Text style={styles.btnTextFile}> Tải file PDF / Excel</Text>
             </TouchableOpacity>
           </View>
         )}

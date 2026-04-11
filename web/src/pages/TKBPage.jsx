@@ -130,13 +130,17 @@ export default function TKBPage({ classes, setClasses }) {
     setTooltip(null);
   };
 
-  const restoreClass = async id => { 
+  const restoreClass = async (id) => {
     await fetch(`${API_BASE}/api/sessions/${id}/status`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({status: 'normal'})
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "normal" }),
     });
-    setClasses(p => p.map(c => c.id === id ? { ...c, status: 'normal' } : c)); 
-    setTooltip(null); 
-  }
+    setClasses((p) =>
+      p.map((c) => (c.id === id ? { ...c, status: "normal" } : c)),
+    );
+    setTooltip(null);
+  };
 
   // ── Tooltip: follow cursor on block, lock on tooltip hover ──
   const safePos = (cx, cy) => {
@@ -257,9 +261,9 @@ export default function TKBPage({ classes, setClasses }) {
                     rows.push(
                       <tr key={`brk${t}`}>
                         <td style={s.brkTier}>
-                          <span style={{ fontSize: 8, color: "#B45309" }}>
-                            ☕
-                          </span>
+                          <span
+                            style={{ fontSize: 8, color: "#B45309" }}
+                          ></span>
                         </td>
                         <td colSpan={7} style={s.brkCell}>
                           {t === 4

@@ -1,10 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Dimensions,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,7 +15,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import UploadScreen from "./UploadScreen";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const API_BASE = "http://127.0.0.1:8000"; // Đổi thành IP LAN của bạn nếu chạy trên điện thoại thật (VD: http://192.168.1.5:8000)
 
@@ -327,14 +337,14 @@ function DetailSheet({ cls, onClose, onEdit, onDelete, onCancel, onRestore }) {
         {/* Actions */}
         <View style={st.sheetActions}>
           <TouchableOpacity style={[st.sheetBtn, st.btnEdit]} onPress={onEdit}>
-            <Text style={st.btnEditTx}>✏️ Sửa</Text>
+            <Text style={st.btnEditTx}>️ Sửa</Text>
           </TouchableOpacity>
           {cls.status !== "cancelled" ? (
             <TouchableOpacity
               style={[st.sheetBtn, st.btnCancel]}
               onPress={onCancel}
             >
-              <Text style={st.btnCancelTx}>⛔ Hủy buổi</Text>
+              <Text style={st.btnCancelTx}> Hủy buổi</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -345,7 +355,7 @@ function DetailSheet({ cls, onClose, onEdit, onDelete, onCancel, onRestore }) {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={[st.sheetBtn, st.btnDel]} onPress={onDelete}>
-            <Text style={st.btnDelTx}>🗑️ Xóa</Text>
+            <Text style={st.btnDelTx}>️ Xóa</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={st.sheetClose} onPress={onClose}>
@@ -408,10 +418,10 @@ function AEModal({ init, onSave, onClose }) {
         <View style={st.aeModal}>
           <View style={st.aeHeader}>
             <Text style={st.aeTitle}>
-              {init ? "✏️  Sửa buổi dạy" : "➕  Thêm buổi dạy"}
+              {init ? "️  Sửa buổi dạy" : "  Thêm buổi dạy"}
             </Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={{ fontSize: 22, color: C.text3 }}>✕</Text>
+              <Text style={{ fontSize: 22, color: C.text3 }}></Text>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -612,7 +622,7 @@ function AEModal({ init, onSave, onClose }) {
               <Text style={st.btnSecondaryTx}>Hủy</Text>
             </TouchableOpacity>
             <TouchableOpacity style={st.btnPrimary} onPress={save}>
-              <Text style={st.btnPrimaryTx}>💾 Lưu</Text>
+              <Text style={st.btnPrimaryTx}> Lưu</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -735,7 +745,7 @@ function TKBScreen({
                             { color: cancelled ? C.text3 : cl.br },
                           ]}
                         >
-                          📍 {c.phong} · Lớp {c.lop}
+                          {c.phong} · Lớp {c.lop}
                         </Text>
 
                         {/* NÚT BÁO TRÙNG LỊCH */}
@@ -858,86 +868,113 @@ function freeRanges(occ, from, to) {
   return res;
 }
 
-function FreeScreen({ classes }) {
+// ════════════════════════════════════════
+// FREE SLOTS SCREEN (Đã fix lỗi Text strings)
+// ════════════════════════════════════════
+function FreeScreen({ classes, weekOffset, onWeekChange }) {
   const [filter, setFilter] = useState(null);
+
+  const base = getMonday(new Date());
+  const ws = addDays(base, weekOffset * 7);
+  const we = addDays(ws, 6);
+
   const days = DF.map((dn, idx) => {
     const thu = idx + 2;
-    const dcs = classes.filter((c) => c.thu === thu);
+    const dayDate = addDays(ws, idx);
+
+    const dcs = classes.filter(
+      (c) =>
+        c.thu === thu &&
+        c.status !== "cancelled" &&
+        isDateInRanges(dayDate, c.date_ranges),
+    );
+
     const occ = new Set();
     dcs.forEach((c) => {
       for (let t = c.tb; t <= c.tk; t++) occ.add(t);
     });
+
     const sessions = SESSIONS.map((sess) => ({
       ...sess,
       ranges: freeRanges(occ, sess.from, sess.to),
     })).filter((s) => s.ranges.length > 0);
-    return {
-      dn,
-      idx,
-      thu,
-      dcs,
-      sessions,
-      total: sessions.reduce((a, s) => a + s.ranges.length, 0),
-    };
+
+    return { dn, idx, thu, dcs, sessions, dayDate };
   });
+
   const shown = filter !== null ? [days[filter]] : days;
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{
-          backgroundColor: C.white,
-          borderBottomWidth: 1,
-          borderBottomColor: C.border,
-          maxHeight: 52,
-        }}
-        contentContainerStyle={{ padding: 10, gap: 6, flexDirection: "row" }}
-      >
-        {["Tất cả", ...DF_SHORT].map((d, i) => (
-          <TouchableOpacity
-            key={i}
-            onPress={() => setFilter(i === 0 ? null : i - 1)}
-            style={[
-              st.filterChip,
-              (i === 0 ? filter === null : filter === i - 1) &&
-                st.filterChipActive,
-            ]}
-          >
-            <Text
+      <View style={st.weekBar}>
+        <TouchableOpacity
+          style={st.weekNavBtn}
+          onPress={() => onWeekChange(-1)}
+        >
+          <Text style={st.weekNavTx}>‹</Text>
+        </TouchableOpacity>
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Text style={st.weekRange}>
+            {fmtShort(ws)} – {fmtShort(we)}
+          </Text>
+        </View>
+        <TouchableOpacity style={st.weekNavBtn} onPress={() => onWeekChange(1)}>
+          <Text style={st.weekNavTx}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={st.todayBtn}
+          onPress={() => onWeekChange(-weekOffset)}
+        >
+          <Text style={st.todayBtnTx}>Hôm nay</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ flexDirection: "row" }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{
+            backgroundColor: C.white,
+            borderBottomWidth: 1,
+            borderBottomColor: C.border,
+            maxHeight: 52,
+            flex: 1,
+          }}
+          contentContainerStyle={{ padding: 10, gap: 6, flexDirection: "row" }}
+        >
+          {["Tất cả", ...DF_SHORT].map((d, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => setFilter(i === 0 ? null : i - 1)}
               style={[
-                st.filterChipTx,
+                st.filterChip,
                 (i === 0 ? filter === null : filter === i - 1) &&
-                  st.filterChipTxActive,
+                  st.filterChipActive,
               ]}
             >
-              {d}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[
+                  st.filterChipTx,
+                  (i === 0 ? filter === null : filter === i - 1) &&
+                    st.filterChipTxActive,
+                ]}
+              >
+                {d}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 20 }}>
         {shown.map((day) => (
           <View key={day.thu} style={st.freeCard}>
             <View style={st.freeCardHead}>
-              <Text style={st.freeCardDay}>{day.dn}</Text>
-              <View
-                style={[
-                  st.freeBadge,
-                  { backgroundColor: day.total > 0 ? "#DCFCE7" : "#FEF2F2" },
-                ]}
-              >
-                <Text
-                  style={[
-                    st.freeBadgeTx,
-                    { color: day.total > 0 ? C.green : C.red },
-                  ]}
-                >
-                  {day.total > 0 ? `${day.total} trống` : "Kín lịch"}
-                </Text>
-              </View>
+              <Text style={st.freeCardDay}>
+                {day.dn}, {fmtShort(day.dayDate)}
+              </Text>
             </View>
+
             {day.sessions.length === 0 ? (
               <Text style={st.freeEmptyTx}>Không có tiết trống</Text>
             ) : (
@@ -984,6 +1021,7 @@ function FreeScreen({ classes }) {
                 </View>
               ))
             )}
+
             {day.dcs.length > 0 && (
               <View style={st.occWrap}>
                 <Text style={st.occLabel}>Đã có lịch:</Text>
@@ -1030,89 +1068,52 @@ function FreeScreen({ classes }) {
 // ════════════════════════════════════════
 // NOTIFICATIONS SCREEN
 // ════════════════════════════════════════
-function NotifScreen({ classes }) {
-  const [notifOn, setNotifOn] = useState(false);
+// ════════════════════════════════════════
+// NOTIFICATIONS SCREEN (Chỉ Cài đặt - Tối giản)
+// ════════════════════════════════════════
+function NotifScreen() {
+  // Đã xóa prop { classes } vì không dùng nữa
   const [settings, setSettings] = useState([
     {
       key: "24h",
-      label: "🔔  Nhắc trước 24 giờ",
+      label: "Nhắc trước 24 giờ",
       sub: "1 ngày trước mỗi buổi dạy",
       on: true,
     },
     {
       key: "1h",
-      label: "⏰  Nhắc trước 1 giờ",
+      label: "Nhắc trước 1 giờ",
       sub: "1 tiếng trước mỗi buổi",
       on: true,
     },
-    {
-      key: "sfx",
-      label: "🔊  Âm thanh",
-      sub: "Phát âm khi có nhắc",
-      on: false,
-    },
+    { key: "sfx", label: "Âm thanh", sub: "Phát âm khi có nhắc", on: false },
   ]);
-  const toggle = (key) =>
-    setSettings((p) => p.map((s) => (s.key === key ? { ...s, on: !s.on } : s)));
+
+  const toggle = async (key) => {
+    const newSettings = settings.map((s) =>
+      s.key === key ? { ...s, on: !s.on } : s,
+    );
+    setSettings(newSettings);
+
+    const toggledItem = newSettings.find((s) => s.key === key);
+
+    // Nếu gạt BẬT -> Xin quyền luôn
+    if (toggledItem.on && (key === "24h" || key === "1h")) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Yêu cầu bật quyền thông báo ứng dụng",
+          "Vào Cài đặt > Ứng dụng > Scan lịch dạy > Thông báo và chọn cho phép quyền theo yêu cầu.",
+        );
+      }
+    }
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
       contentContainerStyle={{ padding: 14, paddingBottom: 30 }}
     >
-      {/* Banner — amber like web */}
-      <View
-        style={[
-          st.notifBanner,
-          {
-            backgroundColor: notifOn ? "#F0FDF4" : "#FFFBEB",
-            borderColor: notifOn ? "#86EFAC" : "#FDE68A",
-          },
-        ]}
-      >
-        <Text style={{ fontSize: 22, marginRight: 10 }}>
-          {notifOn ? "✅" : "🔔"}
-        </Text>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={[
-              st.notifBannerTitle,
-              { color: notifOn ? "#15803D" : "#92400E" },
-            ]}
-          >
-            {notifOn ? "Thông báo đang bật" : "Bật thông báo"}
-          </Text>
-          <Text
-            style={[
-              st.notifBannerSub,
-              { color: notifOn ? "#16A34A" : "#B45309" },
-            ]}
-          >
-            Nhận nhắc nhở trước mỗi buổi dạy
-          </Text>
-        </View>
-        <Switch
-          value={notifOn}
-          onValueChange={setNotifOn}
-          trackColor={{ false: "#D1D5DB", true: C.green }}
-          thumbColor={C.white}
-        />
-      </View>
-
-      {/* Sample */}
-      <View style={st.sampleCard}>
-        <View style={st.sampleIcon}>
-          <Text style={{ fontSize: 20 }}>🔔</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={st.sampleLabel}>VÍ DỤ THÔNG BÁO</Text>
-          <Text style={st.sampleTitle}>📅 Ngày mai có lớp lúc 07:30</Text>
-          <Text style={st.sampleSub}>
-            Phân tích Thiết kế HT · E1-07.08 · Tiết 2–6
-          </Text>
-        </View>
-      </View>
-
-      {/* Settings card */}
       <View style={st.card}>
         <Text style={st.cardHead}>Cài đặt thông báo</Text>
         {settings.map((s) => (
@@ -1126,56 +1127,9 @@ function NotifScreen({ classes }) {
               onValueChange={() => toggle(s.key)}
               trackColor={{ false: "#D1D5DB", true: C.red }}
               thumbColor={C.white}
-              disabled={!notifOn}
             />
           </View>
         ))}
-        {!notifOn && (
-          <Text style={st.disabledHint}>Bật thông báo ở trên để sử dụng</Text>
-        )}
-      </View>
-
-      {/* Upcoming */}
-      <View style={[st.card, { marginTop: 14 }]}>
-        <Text style={st.cardHead}>Lịch dạy sắp tới</Text>
-        {classes
-          .filter((c) => c.status !== "cancelled")
-          .map((c) => {
-            const cl = getColor(c);
-            return (
-              <View key={c.id} style={st.notifRow}>
-                <View style={[st.notifBar, { backgroundColor: cl.br }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[st.notifDay, { color: cl.br }]}>
-                    {DF[c.thu - 2]} · Tiết {c.tb}–{c.tk} · {TT[c.tb - 1]?.s}
-                  </Text>
-                  <Text style={st.notifName}>{c.ten}</Text>
-                  <Text style={st.notifMeta}>
-                    {c.phong} · {c.ma} · {c.truong}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    st.notifBadge,
-                    {
-                      backgroundColor:
-                        c.status === "makeup" ? "#D1FAE5" : "#DCFCE7",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "700",
-                      color: c.status === "makeup" ? C.green : "#15803D",
-                    }}
-                  >
-                    {c.status === "makeup" ? "Dạy bù" : "Sắp tới"}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
       </View>
     </ScrollView>
   );
@@ -1185,10 +1139,10 @@ function NotifScreen({ classes }) {
 // BOTTOM NAV
 // ════════════════════════════════════════
 const TABS = [
-  { id: "tkb", ic: "📅", label: "Lịch dạy" },
-  { id: "free", ic: "🕐", label: "Lịch trống" },
-  { id: "upload", ic: "📤", label: "Upload" },
-  { id: "notif", ic: "🔔", label: "Nhắc nhở" },
+  { id: "tkb", ic: "", label: "Lịch dạy" },
+  { id: "free", ic: "", label: "Lịch trống" },
+  { id: "upload", ic: "", label: "Upload" },
+  { id: "notif", ic: "", label: "Nhắc nhở" },
 ];
 function BottomNav({ active, onChange }) {
   return (
@@ -1199,7 +1153,6 @@ function BottomNav({ active, onChange }) {
           style={[st.navItem, active === t.id && st.navItemActive]}
           onPress={() => onChange(t.id)}
         >
-          <Text style={{ fontSize: 20 }}>{t.ic}</Text>
           <Text style={[st.navLabel, active === t.id && st.navLabelActive]}>
             {t.label}
           </Text>
@@ -1218,33 +1171,154 @@ const PAGE_TITLES = {
   upload: "Cập Nhật TKB",
   notif: "Thông Báo",
 };
-const PAGE_ICONS = { tkb: "📅", free: "🕐", upload: "📤", notif: "🔔" };
+const PAGE_ICONS = { tkb: "", free: "", upload: "", notif: "" };
 
 export default function App() {
+  const [notifOn, setNotifOn] = useState(false); // Công tắc tổng
+  const [is24h, setIs24h] = useState(true);
+  const [is1h, setIs1h] = useState(true);
   const [tab, setTab] = useState("tkb");
   const [classes, setClasses] = useState([]);
   const [sel, setSel] = useState(null);
   const [editCls, setEditCls] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [banner, setBanner] = useState(true);
 
   const semester = useMemo(() => detectSemester(classes), [classes]);
+
+  const syncNotifications = async (
+    currentClasses,
+    config = { notifOn, is24h, is1h },
+  ) => {
+    try {
+      // 1. Luôn luôn xóa sạch báo thức cũ trước khi làm bất cứ việc gì
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      // 2. NẾU GIẢNG VIÊN TẮT CÔNG TẮC TỔNG -> DỪNG LẠI LUÔN, KHÔNG ĐẶT LỊCH NỮA
+      if (!config.notifOn) {
+        console.log("⏸ Đã tắt thông báo theo yêu cầu Giảng viên.");
+        return;
+      }
+
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") return;
+
+      const activeClasses = currentClasses.filter(
+        (c) => c.status !== "cancelled",
+      );
+      const today = new Date();
+
+      for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + dayOffset);
+        const thuOfTarget =
+          targetDate.getDay() === 0 ? 8 : targetDate.getDay() + 1;
+        const classesOnDay = activeClasses.filter((c) => c.thu === thuOfTarget);
+
+        for (const cls of classesOnDay) {
+          const startTier = TT[cls.tb - 1];
+          if (!startTier) continue;
+
+          const [hr, min] = startTier.s.split(":").map(Number);
+          const classTime = new Date(targetDate);
+          classTime.setHours(hr, min, 0, 0);
+
+          // 🕒 NẾU CÔNG TẮC 24H BẬT
+          if (config.is24h) {
+            const notifyTime24h = new Date(
+              classTime.getTime() - 24 * 60 * 60 * 1000,
+            );
+            if (notifyTime24h > new Date()) {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: `Ngày mai có lớp lúc ${startTier.s}`,
+                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
+                  sound: true,
+                },
+                trigger: notifyTime24h,
+              });
+            }
+          }
+
+          // 🕒 NẾU CÔNG TẮC 1H BẬT
+          if (config.is1h) {
+            const notifyTime1h = new Date(classTime.getTime() - 60 * 60 * 1000);
+            if (notifyTime1h > new Date()) {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: `1 giờ nữa có lớp lúc ${startTier.s}`,
+                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
+                  sound: true,
+                },
+                trigger: notifyTime1h,
+              });
+            }
+          }
+        }
+      }
+      console.log("Đã đồng bộ lịch theo cài đặt mới!");
+    } catch (error) {
+      console.error("Lỗi đồng bộ:", error);
+    }
+  };
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const savedNotif = await AsyncStorage.getItem("notifOn");
+        const saved24h = await AsyncStorage.getItem("is24h");
+        const saved1h = await AsyncStorage.getItem("is1h");
+
+        if (savedNotif !== null) setNotifOn(JSON.parse(savedNotif));
+        if (saved24h !== null) setIs24h(JSON.parse(saved24h));
+        if (saved1h !== null) setIs1h(JSON.parse(saved1h));
+      } catch (e) {
+        console.error("Lỗi đọc cài đặt", e);
+      }
+    };
+    loadSettings();
+  }, []);
 
   useEffect(() => {
     if (tab === "tkb") {
       fetch(`${API_BASE}/api/sessions`)
         .then((res) => res.json())
-        .then((data) => setClasses(data.map(mapBEtoFE)))
+        .then((data) => {
+          const mapped = data.map(mapBEtoFE);
+          setClasses(mapped);
+          syncNotifications(mapped); // <--- Gọi đồng bộ báo thức ngay khi có data mới
+        })
         .catch((err) => console.error("Lỗi tải lịch dạy:", err));
     }
   }, [tab]);
 
+  const toggleSetting = async (key, value) => {
+    try {
+      // 1. Lưu vào state UI
+      if (key === "notifOn") setNotifOn(value);
+      if (key === "is24h") setIs24h(value);
+      if (key === "is1h") setIs1h(value);
+
+      // 2. Lưu xuống ổ cứng
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+
+      // 3. Gọi báo thức tính toán lại ngay lập tức với cấu hình mới
+      const newConfig = {
+        notifOn: key === "notifOn" ? value : notifOn,
+        is24h: key === "is24h" ? value : is24h,
+        is1h: key === "is1h" ? value : is1h,
+      };
+      syncNotifications(classes, newConfig);
+    } catch (e) {
+      console.error("Lỗi lưu cài đặt", e);
+    }
+  };
+
   const saveClass = async (c) => {
     try {
       const payload = mapFEtoBE(c);
+      let newClasses = [...classes];
       if (c.id && classes.find((x) => x.id === c.id)) {
-        // Cập nhật (PUT)
         const res = await fetch(`${API_BASE}/api/sessions/${c.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1252,12 +1326,11 @@ export default function App() {
         });
         if (res.ok) {
           const updated = await res.json();
-          setClasses((p) =>
-            p.map((x) => (x.id === updated.id ? mapBEtoFE(updated) : x)),
+          newClasses = classes.map((x) =>
+            x.id === updated.id ? mapBEtoFE(updated) : x,
           );
         }
       } else {
-        // Thêm mới (POST)
         const res = await fetch(`${API_BASE}/api/sessions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1265,19 +1338,22 @@ export default function App() {
         });
         if (res.ok) {
           const added = await res.json();
-          setClasses((p) => [...p, mapBEtoFE(added)]);
+          newClasses = [...classes, mapBEtoFE(added)];
         }
       }
+      setClasses(newClasses);
+      syncNotifications(newClasses); // <--- Đồng bộ sau khi Thêm/Sửa
       setEditCls(null);
       setShowAdd(false);
       setSel(null);
     } catch (e) {
       console.error(e);
-      Alert.alert("Lỗi", "Không thể lưu dữ liệu vào Database");
+      Alert.alert("Lỗi", "Không thể lưu");
     }
   };
+
   const deleteClass = (id) => {
-    Alert.alert("Xóa buổi dạy?", "Buổi dạy này sẽ bị xóa vĩnh viễn.", [
+    Alert.alert("Xóa buổi dạy?", "Buổi dạy này sẽ bị xóa", [
       { text: "Hủy", style: "cancel" },
       {
         text: "Xóa",
@@ -1285,24 +1361,29 @@ export default function App() {
         onPress: async () => {
           try {
             await fetch(`${API_BASE}/api/sessions/${id}`, { method: "DELETE" });
-            setClasses((p) => p.filter((c) => c.id !== id));
+            const newClasses = classes.filter((c) => c.id !== id);
+            setClasses(newClasses);
+            syncNotifications(newClasses);
             setSel(null);
           } catch (e) {
-            Alert.alert("Lỗi", "Không thể xóa trên Server");
+            Alert.alert("Lỗi", "Không thể xóa");
           }
         },
       },
     ]);
   };
+
   const cancelClass = async (id) => {
     await fetch(`${API_BASE}/api/sessions/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "cancelled" }),
     });
-    setClasses((p) =>
-      p.map((c) => (c.id === id ? { ...c, status: "cancelled" } : c)),
+    const newClasses = classes.map((c) =>
+      c.id === id ? { ...c, status: "cancelled" } : c,
     );
+    setClasses(newClasses);
+    syncNotifications(newClasses); // <--- Đồng bộ sau khi Hủy buổi (để Android không réo nữa)
     setSel(null);
   };
 
@@ -1322,7 +1403,7 @@ export default function App() {
   const handleResolveConflict = (currentCls, conflictCls) => {
     Alert.alert(
       "Phát hiện trùng lịch",
-      `Buổi dạy này đang trùng giờ với:\n\n Môn: ${conflictCls.ten}\n📍 Phòng: ${conflictCls.phong}\n Thứ ${conflictCls.thu}, Tiết ${conflictCls.tb} - ${conflictCls.tk}\n\nThầy muốn xử lý thế nào?`,
+      `Buổi dạy này đang trùng giờ với:\n\n Môn: ${conflictCls.ten}\n Phòng: ${conflictCls.phong}\n Thứ ${conflictCls.thu}, Tiết ${conflictCls.tb} - ${conflictCls.tk}\n\nThầy muốn xử lý thế nào?`,
       [
         { text: "Giữ nguyên", style: "cancel" },
         {
@@ -1344,110 +1425,96 @@ export default function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "normal" }),
     });
-    setClasses((p) =>
-      p.map((c) => (c.id === id ? { ...c, status: "normal" } : c)),
+    const newClasses = classes.map((c) =>
+      c.id === id ? { ...c, status: "normal" } : c,
     );
+    setClasses(newClasses);
+    syncNotifications(newClasses); // <--- Đồng bộ sau khi Khôi phục buổi
     setSel(null);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.white }}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.white} />
+    <SafeAreaProvider>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: C.white }}
+        edges={["top", "bottom"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor={C.white} />
 
-      {/* Header — white like web */}
-      <View style={st.header}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontSize: 22 }}>{PAGE_ICONS[tab]}</Text>
-          <Text style={st.headerTitle}>{PAGE_TITLES[tab]}</Text>
+        {/* Header — white like web */}
+        <View style={st.header}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 22 }}>{PAGE_ICONS[tab]}</Text>
+            <Text style={st.headerTitle}>{PAGE_TITLES[tab]}</Text>
+          </View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          {semester && (
-            <View style={st.semBadge}>
-              <Text style={st.semBadgeTx}>{semester}</Text>
-            </View>
+
+        {/* Content */}
+        <View style={{ flex: 1, backgroundColor: C.bg }}>
+          {tab === "tkb" && (
+            <TKBScreen
+              classes={classes}
+              onPick={setSel}
+              onAdd={() => setShowAdd(true)}
+              weekOffset={weekOffset}
+              onWeekChange={(d) => setWeekOffset((o) => o + d)}
+              getConflictingClass={getConflictingClass}
+              handleResolveConflict={handleResolveConflict}
+            />
           )}
-          <TouchableOpacity
-            style={st.notifIconBtn}
-            onPress={() => setTab("notif")}
-          >
-            <Text style={{ fontSize: 18 }}>🔔</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Amber banner — same as web */}
-      {banner && (
-        <View style={st.amberBanner}>
-          <Text style={{ fontSize: 14, marginRight: 6 }}>📌</Text>
-          <Text style={st.amberBannerTx} numberOfLines={1}>
-            Sắp tới: {classes.find((c) => c.status !== "cancelled")?.ten || ""}
-          </Text>
-          <TouchableOpacity onPress={() => setBanner(false)}>
-            <Text
-              style={{
-                fontSize: 18,
-                color: C.amberTx,
-                opacity: 0.7,
-                paddingLeft: 8,
+          {tab === "free" && (
+            <FreeScreen
+              classes={classes}
+              weekOffset={weekOffset}
+              onWeekChange={(d) => setWeekOffset((o) => o + d)}
+            />
+          )}
+          {tab === "upload" && (
+            <UploadScreen
+              onSuccess={(nc) => {
+                setClasses((p) => [...p, ...nc]);
+                setTab("tkb");
               }}
-            >
-              ✕
-            </Text>
-          </TouchableOpacity>
+            />
+          )}
+          {tab === "notif" && (
+            <NotifScreen
+              classes={classes}
+              notifOn={notifOn}
+              is24h={is24h}
+              is1h={is1h}
+              toggleSetting={toggleSetting}
+            />
+          )}
         </View>
-      )}
 
-      {/* Content */}
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
-        {tab === "tkb" && (
-          <TKBScreen
-            classes={classes}
-            onPick={setSel}
-            onAdd={() => setShowAdd(true)}
-            weekOffset={weekOffset}
-            onWeekChange={(d) => setWeekOffset((o) => o + d)}
-            getConflictingClass={getConflictingClass}
-            handleResolveConflict={handleResolveConflict}
+        <BottomNav active={tab} onChange={setTab} />
+
+        {sel && !editCls && (
+          <DetailSheet
+            cls={sel}
+            onClose={() => setSel(null)}
+            onEdit={() => {
+              setEditCls(sel);
+              setSel(null);
+            }}
+            onDelete={() => deleteClass(sel.id)}
+            onCancel={() => cancelClass(sel.id)}
+            onRestore={() => restoreClass(sel.id)}
           />
         )}
-        {tab === "free" && <FreeScreen classes={classes} />}
-        {tab === "upload" && (
-          <UploadScreen
-            onSuccess={(nc) => {
-              setClasses((p) => [...p, ...nc]);
-              setTab("tkb");
+        {(showAdd || editCls) && (
+          <AEModal
+            init={editCls}
+            onSave={saveClass}
+            onClose={() => {
+              setShowAdd(false);
+              setEditCls(null);
             }}
           />
         )}
-        {tab === "notif" && <NotifScreen classes={classes} />}
-      </View>
-
-      <BottomNav active={tab} onChange={setTab} />
-
-      {sel && !editCls && (
-        <DetailSheet
-          cls={sel}
-          onClose={() => setSel(null)}
-          onEdit={() => {
-            setEditCls(sel);
-            setSel(null);
-          }}
-          onDelete={() => deleteClass(sel.id)}
-          onCancel={() => cancelClass(sel.id)}
-          onRestore={() => restoreClass(sel.id)}
-        />
-      )}
-      {(showAdd || editCls) && (
-        <AEModal
-          init={editCls}
-          onSave={saveClass}
-          onClose={() => {
-            setShowAdd(false);
-            setEditCls(null);
-          }}
-        />
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
@@ -1629,18 +1696,23 @@ const st = StyleSheet.create({
     backgroundColor: C.white,
     borderTopWidth: 1,
     borderTopColor: C.border,
-    paddingBottom: Platform.OS === "ios" ? 20 : 0,
   },
   navItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 15,
     borderTopWidth: 2.5,
     borderTopColor: "transparent",
   },
   navItemActive: { backgroundColor: "#FEF2F2", borderTopColor: C.red },
-  navLabel: { fontSize: 11, color: C.text3, fontWeight: "500", marginTop: 2 },
+  navLabel: {
+    fontSize: 14,
+    color: C.text3,
+    fontWeight: "500",
+    marginTop: 2,
+    textAlign: "center",
+  },
   navLabelActive: { color: C.red, fontWeight: "700" },
 
   // Detail sheet

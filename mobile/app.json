@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TimeTableMaker",
+    "name": "Scan Lịch Dạy",
     "slug": "TimeTableMaker",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -42,7 +42,13 @@
         }
       ],
       "expo-document-picker",
-      "react-native-document-scanner-plugin"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#DC2626"
+        }
+      ]
     ]
   }
 }

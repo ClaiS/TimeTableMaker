@@ -115,7 +115,7 @@ export default function UploadPage({ onSuccess }) {
       <div style={s.left}>
         {/* Info banner */}
         <div style={s.infoBanner}>
-          <div style={s.infoIcon}>🔍</div>
+          <div style={s.infoIcon}></div>
           <div>
             <div style={s.infoTitle}>Nhận diện tên trường tự động</div>
             <div style={s.infoTx}>
@@ -142,7 +142,7 @@ export default function UploadPage({ onSuccess }) {
                 if (f) doUpload(f);
               }}
             >
-              <div style={s.dropIcon}>📁</div>
+              <div style={s.dropIcon}></div>
               <div style={s.dropTitle}>Kéo thả hoặc nhấn để chọn file</div>
               <div style={s.dropSub}>
                 Hỗ trợ PDF (.pdf) và Excel (.xlsx, .xls)
@@ -161,7 +161,7 @@ export default function UploadPage({ onSuccess }) {
 
             {/* Scan note */}
             <div style={s.scanNote}>
-              <span style={{ fontSize: 20 }}>📷</span>
+              <span style={{ fontSize: 20 }}></span>
               <div>
                 <div style={s.scanTitle}>Chụp ảnh / Scan bằng điện thoại</div>
                 <div style={s.scanSub}>
@@ -174,7 +174,7 @@ export default function UploadPage({ onSuccess }) {
 
         {st === "progress" && (
           <div style={s.progressBox}>
-            <div style={s.progressIcon}>{progress < 70 ? "⬆️" : "🔍"}</div>
+            <div style={s.progressIcon}>{progress < 70 ? "⬆️" : ""}</div>
             <div style={s.progressTitle}>{progressLabel}</div>
             <div style={s.progressTrack}>
               <div style={{ ...s.progressFill, width: `${progress}%` }} />
@@ -186,7 +186,7 @@ export default function UploadPage({ onSuccess }) {
         {st === "done" && (
           <div style={s.doneBox}>
             <div style={s.doneHeader}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+              <div style={{ fontSize: 40, marginBottom: 8 }}></div>
               <div style={s.doneTitle}>Phân tích thành công!</div>
               <div style={s.doneSub}>
                 Nhận diện trường:{" "}
@@ -214,7 +214,7 @@ export default function UploadPage({ onSuccess }) {
                 Bỏ qua
               </button>
               <button style={s.btnApply} onClick={apply}>
-                ✓ Cập nhật TKB
+                Cập nhật TKB
               </button>
             </div>
           </div>
