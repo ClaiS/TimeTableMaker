@@ -1174,9 +1174,8 @@ const PAGE_TITLES = {
 const PAGE_ICONS = { tkb: "", free: "", upload: "", notif: "" };
 
 export default function App() {
-  const [notifOn, setNotifOn] = useState(false); // Công tắc tổng
-  const [is24h, setIs24h] = useState(true);
-  const [is1h, setIs1h] = useState(true);
+  const [is24h, setIs24h] = useState(false);
+  const [is1h, setIs1h] = useState(false);
   const [tab, setTab] = useState("tkb");
   const [classes, setClasses] = useState([]);
   const [sel, setSel] = useState(null);
@@ -1186,33 +1185,39 @@ export default function App() {
 
   const semester = useMemo(() => detectSemester(classes), [classes]);
 
-  const syncNotifications = async (
-    currentClasses,
-    config = { notifOn, is24h, is1h },
-  ) => {
+  const syncNotifications = async (currentClasses, explicitConfig = null) => {
     try {
-      // 1. Luôn luôn xóa sạch báo thức cũ trước khi làm bất cứ việc gì
       await Notifications.cancelAllScheduledNotificationsAsync();
 
-      // 2. NẾU GIẢNG VIÊN TẮT CÔNG TẮC TỔNG -> DỪNG LẠI LUÔN, KHÔNG ĐẶT LỊCH NỮA
-      if (!config.notifOn) {
-        console.log("⏸ Đã tắt thông báo theo yêu cầu Giảng viên.");
+      let c24h = is24h, c1h = is1h;
+
+      // Nếu không có config truyền vào, ép nó đọc ổ cứng để đảm bảo 100% chính xác
+      if (!explicitConfig) {
+        const s24 = await AsyncStorage.getItem("is24h");
+        const s1 = await AsyncStorage.getItem("is1h");
+        c24h = s24 !== null ? JSON.parse(s24) : true;
+        c1h = s1 !== null ? JSON.parse(s1) : true;
+      } else {
+        c24h = explicitConfig.is24h;
+        c1h = explicitConfig.is1h;
+      }
+
+      // Nếu cả 2 nút đều tắt -> Không cài báo thức
+      if (!c24h && !c1h) {
+        console.log("⏸ Không có lịch nhắc nào được bật.");
         return;
       }
 
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") return;
 
-      const activeClasses = currentClasses.filter(
-        (c) => c.status !== "cancelled",
-      );
+      const activeClasses = currentClasses.filter((c) => c.status !== "cancelled");
       const today = new Date();
 
       for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + dayOffset);
-        const thuOfTarget =
-          targetDate.getDay() === 0 ? 8 : targetDate.getDay() + 1;
+        const thuOfTarget = targetDate.getDay() === 0 ? 8 : targetDate.getDay() + 1;
         const classesOnDay = activeClasses.filter((c) => c.thu === thuOfTarget);
 
         for (const cls of classesOnDay) {
@@ -1223,33 +1228,21 @@ export default function App() {
           const classTime = new Date(targetDate);
           classTime.setHours(hr, min, 0, 0);
 
-          // 🕒 NẾU CÔNG TẮC 24H BẬT
-          if (config.is24h) {
-            const notifyTime24h = new Date(
-              classTime.getTime() - 24 * 60 * 60 * 1000,
-            );
+          if (c24h) {
+            const notifyTime24h = new Date(classTime.getTime() - 24 * 60 * 60 * 1000);
             if (notifyTime24h > new Date()) {
               await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: `Ngày mai có lớp lúc ${startTier.s}`,
-                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
-                  sound: true,
-                },
+                content: { title: `Ngày mai có lớp lúc ${startTier.s}`, body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`},
                 trigger: notifyTime24h,
               });
             }
           }
 
-          // 🕒 NẾU CÔNG TẮC 1H BẬT
-          if (config.is1h) {
+          if (c1h) {
             const notifyTime1h = new Date(classTime.getTime() - 60 * 60 * 1000);
             if (notifyTime1h > new Date()) {
               await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: `1 giờ nữa có lớp lúc ${startTier.s}`,
-                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
-                  sound: true,
-                },
+                content: { title: `1 giờ nữa có lớp lúc ${startTier.s}`, body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`},
                 trigger: notifyTime1h,
               });
             }
@@ -1257,24 +1250,18 @@ export default function App() {
         }
       }
       console.log("Đã đồng bộ lịch theo cài đặt mới!");
-    } catch (error) {
-      console.error("Lỗi đồng bộ:", error);
-    }
+    } catch (error) { console.error("Lỗi đồng bộ:", error); }
   };
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const savedNotif = await AsyncStorage.getItem("notifOn");
         const saved24h = await AsyncStorage.getItem("is24h");
         const saved1h = await AsyncStorage.getItem("is1h");
 
-        if (savedNotif !== null) setNotifOn(JSON.parse(savedNotif));
         if (saved24h !== null) setIs24h(JSON.parse(saved24h));
         if (saved1h !== null) setIs1h(JSON.parse(saved1h));
-      } catch (e) {
-        console.error("Lỗi đọc cài đặt", e);
-      }
+      } catch (e) { console.error("Lỗi đọc cài đặt", e); }
     };
     loadSettings();
   }, []);
@@ -1286,7 +1273,7 @@ export default function App() {
         .then((data) => {
           const mapped = data.map(mapBEtoFE);
           setClasses(mapped);
-          syncNotifications(mapped); // <--- Gọi đồng bộ báo thức ngay khi có data mới
+          syncNotifications(mapped); 
         })
         .catch((err) => console.error("Lỗi tải lịch dạy:", err));
     }
@@ -1294,24 +1281,17 @@ export default function App() {
 
   const toggleSetting = async (key, value) => {
     try {
-      // 1. Lưu vào state UI
-      if (key === "notifOn") setNotifOn(value);
       if (key === "is24h") setIs24h(value);
       if (key === "is1h") setIs1h(value);
 
-      // 2. Lưu xuống ổ cứng
       await AsyncStorage.setItem(key, JSON.stringify(value));
 
-      // 3. Gọi báo thức tính toán lại ngay lập tức với cấu hình mới
       const newConfig = {
-        notifOn: key === "notifOn" ? value : notifOn,
         is24h: key === "is24h" ? value : is24h,
         is1h: key === "is1h" ? value : is1h,
       };
       syncNotifications(classes, newConfig);
-    } catch (e) {
-      console.error("Lỗi lưu cài đặt", e);
-    }
+    } catch (e) { console.error("Lỗi lưu cài đặt", e); }
   };
 
   const saveClass = async (c) => {
@@ -1479,8 +1459,6 @@ export default function App() {
           )}
           {tab === "notif" && (
             <NotifScreen
-              classes={classes}
-              notifOn={notifOn}
               is24h={is24h}
               is1h={is1h}
               toggleSetting={toggleSetting}
