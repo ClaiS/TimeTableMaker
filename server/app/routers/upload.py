@@ -186,16 +186,61 @@ async def confirm_upload(
     for s in sessions_to_save:
         # 1. KIỂM TRA TRÙNG LỊCH (Lấy 1 dòng đầu tiên để tránh lỗi MultipleResultsFound)
         tiet_ket_thuc_du_kien = s.tiet_bat_dau + s.so_tiet - 1
+        
+        # Bước 1.1: Tìm các môn trùng Thứ và Tiết
         overlap_query = select(TeachingSession).where(
             TeachingSession.thu == s.thu,
             TeachingSession.tiet_bat_dau <= tiet_ket_thuc_du_kien,
-            TeachingSession.tiet_ket_thuc >= s.tiet_bat_dau
+            TeachingSession.tiet_ket_thuc >= s.tiet_bat_dau,
+            TeachingSession.status != 'cancelled'
         )
         overlap_result = await db.execute(overlap_query)
-        overlap_session = overlap_result.scalars().first() # Chỉ lấy 1 môn đầu tiên
-        
-        if overlap_session:
-            warnings.append(f"Môn '{s.ten_mon}' trùng giờ với '{overlap_session.ten_mon}' (Thứ {s.thu})")
+        potential_overlaps = overlap_result.scalars().all()
+
+        has_conflict = False
+        conflict_name = ""
+
+        if potential_overlaps:
+            # Parse ngày tháng của môn học MỚI chuẩn bị lưu
+            new_ranges = []
+            if hasattr(s, 'date_ranges') and s.date_ranges:
+                for dr in s.date_ranges:
+                    parts = [p.strip() for p in dr.split('-')]
+                    try:
+                        if len(parts) == 2:
+                            new_ranges.append((datetime.strptime(parts[0], "%d/%m/%Y").date(), datetime.strptime(parts[1], "%d/%m/%Y").date()))
+                        elif len(parts) == 1:
+                            d = datetime.strptime(parts[0], "%d/%m/%Y").date()
+                            new_ranges.append((d, d))
+                    except ValueError:
+                        pass
+            
+            # Bước 1.2: Lọc lại xem có thực sự đụng nhau về Ngày/Tháng không
+            for old_session in potential_overlaps:
+                old_ranges_query = await db.execute(select(SessionDateRange).where(SessionDateRange.session_id == old_session.id))
+                old_ranges_db = old_ranges_query.scalars().all()
+
+                if not new_ranges or not old_ranges_db:
+                    # Nếu 1 trong 2 không có ngày cụ thể, mặc định là trùng để cảnh báo an toàn
+                    has_conflict = True
+                    conflict_name = old_session.ten_mon
+                    break
+                
+                # So sánh giao nhau (Intersection)
+                for nr in new_ranges:
+                    for or_db in old_ranges_db:
+                        # Công thức: startA <= endB và startB <= endA
+                        if nr[0] <= or_db.ngay_ket_thuc and or_db.ngay_bat_dau <= nr[1]:
+                            has_conflict = True
+                            conflict_name = old_session.ten_mon
+                            break
+                    if has_conflict:
+                        break
+                if has_conflict:
+                    break
+
+        if has_conflict:
+            warnings.append(f"Môn '{s.ten_mon}' trùng giờ với '{conflict_name}' (Thứ {s.thu})")
 
         # 2. LƯU MÔN HỌC MỚI VÀO DB BÌNH THƯỜNG
         new_session = TeachingSession(

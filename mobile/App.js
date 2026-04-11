@@ -84,6 +84,36 @@ function isDateInRanges(targetDate, dateRanges) {
   });
 }
 
+function doDateRangesOverlap(rangesA, rangesB) {
+  // Nếu 1 trong 2 không có ngày cụ thể, mặc định cho là đụng nhau để an toàn
+  if (!rangesA || !rangesA.length || !rangesB || !rangesB.length) return true;
+
+  const parseRange = (r) => {
+    const parts = r.split("-").map((s) => s.trim());
+    const parseD = (str) => {
+      const [d, m, y] = str.split("/");
+      return new Date(y, m - 1, d).setHours(0, 0, 0, 0);
+    };
+    const start = parseD(parts[0]);
+    const end = parts.length === 2 ? parseD(parts[1]) : start;
+    return { start, end };
+  };
+
+  const pA = rangesA.map(parseRange);
+  const pB = rangesB.map(parseRange);
+
+  // So sánh chéo từng khoảng thời gian của Môn A với Môn B
+  for (const a of pA) {
+    for (const b of pB) {
+      // Công thức trùng lặp: Bắt đầu A <= Kết thúc B VÀ Bắt đầu B <= Kết thúc A
+      if (a.start <= b.end && b.start <= a.end) {
+        return true; 
+      }
+    }
+  }
+  return false;
+}
+
 const { width: SW } = Dimensions.get("window");
 
 // ─── DESIGN TOKENS (mirror web) ───
@@ -1393,7 +1423,8 @@ export default function App() {
         c.tb <= targetCls.tk && // Giao nhau về tiết học
         c.tk >= targetCls.tb &&
         c.status !== "cancelled" &&
-        targetCls.status !== "cancelled",
+        targetCls.status !== "cancelled" &&
+        doDateRangesOverlap(c.date_ranges, targetCls.date_ranges) // <--- ÉP KIỂM TRA ĐỤNG NGAU VỀ NGÀY THÁNG
     );
   };
 

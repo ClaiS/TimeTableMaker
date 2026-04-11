@@ -16,6 +16,7 @@ import re
 import os
 import json
 import unicodedata
+import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List
@@ -87,20 +88,42 @@ def _parse_excel(data: bytes, filename: str = "") -> ParseResult:
 
 def _parse_image_gemini(data: bytes) -> ParseResult:
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # 1. KHÓA SỰ SÁNG TẠO VÀ ÉP KIỂU JSON
+        model = genai.GenerativeModel(
+            model_name='gemini-2.5-flash',
+            generation_config={
+                "temperature": 0.0, 
+                "response_mime_type": "application/json" 
+            }
+        )
         
         image_part = {
             "mime_type": "image/jpeg",
             "data": data
         }
         
-        prompt = """
-        Bạn là một hệ thống trích xuất dữ liệu lịch giảng dạy đại học xuất sắc.
-        Hãy đọc bức ảnh lịch dạy (của HUTECH) được cung cấp và trích xuất tất cả các buổi dạy thành một mảng JSON.
+        # 2. LẤY NĂM HIỆN TẠI ĐỂ TRUYỀN VÀO PROMPT
+        current_year = datetime.datetime.now().year
         
-        Tuyệt đối không giải thích, chỉ trả về đúng định dạng JSON như mẫu sau:
+        # 3. KỶ LUẬT THÉP VỚI F-STRING (Chú ý dùng {{ }} cho ngoặc nhọn của JSON)
+        prompt = f"""
+        Bạn là một hệ thống trích xuất dữ liệu lịch giảng dạy đại học xuất sắc và cực kỳ tỉ mỉ.
+        Nhiệm vụ: Đọc bức ảnh lịch dạy và trích xuất TUYỆT ĐỐI TẤT CẢ các buổi dạy thành một mảng JSON.
+        
+        Quy tắc SỐNG CÒN (Bắt buộc tuân thủ 100%):
+        1. KHÔNG ĐƯỢC BỎ SÓT: Rà soát bảng từ trên xuống dưới, từ trái qua phải. Bức ảnh có bao nhiêu dòng môn học, PHẢI tạo ra bấy nhiêu object. Việc bỏ sót môn học là lỗi cực kỳ nghiêm trọng.
+        2. CHUẨN HOÁ NGÀY THÁNG (date_ranges): 
+           - Bắt buộc dùng định dạng "DD/MM/YYYY - DD/MM/YYYY".
+           - Năm hiện tại đang là {current_year}. Nếu trên ảnh chỉ ghi ngày/tháng (vd: 05/03) mà thiếu năm, HÃY TỰ ĐỘNG THÊM NĂM {current_year} VÀO.
+           - Tuyệt đối không tự bịa ngày tháng nếu không có.
+        3. Cột 'Tổ TH' (to_th): Nếu có số thì ghi số (vd: "02"), nếu không có thực hành thì để null.
+        4. Cột 'Tín chỉ' (tin_chi): Số nguyên.
+        5. Cột 'Sĩ số' (si_so): Số nguyên. Nếu rớt dòng (vd 10 trên 3 dưới), gộp thành 103.
+        6. Thứ (thu): Số nguyên từ 2 đến 8 (Chủ nhật là 8).
+        
+        Định dạng JSON đầu ra BẮT BUỘC:
         [
-          {
+          {{
             "ma_mon": "CMP376",
             "ten_mon": "Thực hành lập trình Web",
             "tin_chi": 1,
@@ -112,29 +135,15 @@ def _parse_image_gemini(data: bytes) -> ParseResult:
             "phong": "E1-04.06/1",
             "ten_lop": "23DTHE3,23DTHE2",
             "si_so": 28,
-            "date_ranges": ["05/02/2026 - 05/02/2026", "05/03/2026 - 02/04/2026"]
-          }
+            "date_ranges": ["05/02/{current_year} - 05/02/{current_year}", "05/03/{current_year} - 02/04/{current_year}"]
+          }}
         ]
-        
-        Quy tắc:
-        1. Cột 'Tổ TH' (to_th): Nếu môn có thực hành sẽ có số (vd: 02), nếu ô trống thì để null.
-        2. Cột 'Tín chỉ' (tin_chi): Trích xuất thành số nguyên.
-        3. Cột 'Ngày học' có thể có nhiều khoảng thời gian, hãy gom hết vào mảng date_ranges.
-        4. Tên môn không được chứa số thứ tự hay ký tự lạ.
-        5. 'thu' (Thứ) là số nguyên từ 2 đến 8.
-        6. Nếu cột 'Sĩ số' bị rớt dòng (vd 10 trên, 3 dưới), gộp lại thành 103.
-        7. Nếu không thấy dữ liệu, hãy trả về mảng rỗng [].
         """
 
         response = model.generate_content([prompt, image_part])
         response_text = response.text.strip()
         
-        # Clean markdown if any
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-            
+        # Parse JSON an toàn
         json_data = json.loads(response_text)
         
         sessions = []
