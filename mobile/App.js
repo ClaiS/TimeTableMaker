@@ -1189,7 +1189,8 @@ export default function App() {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
 
-      let c24h = is24h, c1h = is1h;
+      let c24h = is24h,
+        c1h = is1h;
 
       // Nếu không có config truyền vào, ép nó đọc ổ cứng để đảm bảo 100% chính xác
       if (!explicitConfig) {
@@ -1211,13 +1212,16 @@ export default function App() {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") return;
 
-      const activeClasses = currentClasses.filter((c) => c.status !== "cancelled");
+      const activeClasses = currentClasses.filter(
+        (c) => c.status !== "cancelled",
+      );
       const today = new Date();
 
       for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + dayOffset);
-        const thuOfTarget = targetDate.getDay() === 0 ? 8 : targetDate.getDay() + 1;
+        const thuOfTarget =
+          targetDate.getDay() === 0 ? 8 : targetDate.getDay() + 1;
         const classesOnDay = activeClasses.filter((c) => c.thu === thuOfTarget);
 
         for (const cls of classesOnDay) {
@@ -1229,10 +1233,15 @@ export default function App() {
           classTime.setHours(hr, min, 0, 0);
 
           if (c24h) {
-            const notifyTime24h = new Date(classTime.getTime() - 24 * 60 * 60 * 1000);
+            const notifyTime24h = new Date(
+              classTime.getTime() - 24 * 60 * 60 * 1000,
+            );
             if (notifyTime24h > new Date()) {
               await Notifications.scheduleNotificationAsync({
-                content: { title: `Ngày mai có lớp lúc ${startTier.s}`, body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`},
+                content: {
+                  title: `Ngày mai có lớp lúc ${startTier.s}`,
+                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
+                },
                 trigger: notifyTime24h,
               });
             }
@@ -1242,7 +1251,10 @@ export default function App() {
             const notifyTime1h = new Date(classTime.getTime() - 60 * 60 * 1000);
             if (notifyTime1h > new Date()) {
               await Notifications.scheduleNotificationAsync({
-                content: { title: `1 giờ nữa có lớp lúc ${startTier.s}`, body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`},
+                content: {
+                  title: `1 giờ nữa có lớp lúc ${startTier.s}`,
+                  body: `${cls.ten} · Tiết ${cls.tb}-${cls.tk} · Phòng ${cls.phong}`,
+                },
                 trigger: notifyTime1h,
               });
             }
@@ -1250,7 +1262,9 @@ export default function App() {
         }
       }
       console.log("Đã đồng bộ lịch theo cài đặt mới!");
-    } catch (error) { console.error("Lỗi đồng bộ:", error); }
+    } catch (error) {
+      console.error("Lỗi đồng bộ:", error);
+    }
   };
 
   useEffect(() => {
@@ -1261,7 +1275,9 @@ export default function App() {
 
         if (saved24h !== null) setIs24h(JSON.parse(saved24h));
         if (saved1h !== null) setIs1h(JSON.parse(saved1h));
-      } catch (e) { console.error("Lỗi đọc cài đặt", e); }
+      } catch (e) {
+        console.error("Lỗi đọc cài đặt", e);
+      }
     };
     loadSettings();
   }, []);
@@ -1273,7 +1289,7 @@ export default function App() {
         .then((data) => {
           const mapped = data.map(mapBEtoFE);
           setClasses(mapped);
-          syncNotifications(mapped); 
+          syncNotifications(mapped);
         })
         .catch((err) => console.error("Lỗi tải lịch dạy:", err));
     }
@@ -1291,7 +1307,9 @@ export default function App() {
         is1h: key === "is1h" ? value : is1h,
       };
       syncNotifications(classes, newConfig);
-    } catch (e) { console.error("Lỗi lưu cài đặt", e); }
+    } catch (e) {
+      console.error("Lỗi lưu cài đặt", e);
+    }
   };
 
   const saveClass = async (c) => {
