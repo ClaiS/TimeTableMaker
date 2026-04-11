@@ -15,12 +15,12 @@ import {
   Alert,
   Image,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // Đã chuyển sang dùng thư viện chuẩn
 import DocumentScanner from "react-native-document-scanner-plugin";
 
 // ─── Config ────────────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ import DocumentScanner from "react-native-document-scanner-plugin";
 const API_BASE = __DEV__ ? "http://127.0.0.1:8000" : "https://your-server.com";
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export default function UploadScreen(onSuccess) {
+export default function UploadScreen({ onSuccess }) { // Lưu ý: đã thêm {} bọc onSuccess để nhận đúng props từ App.js truyền xuống
   const [status, setStatus] = useState("IDLE"); // IDLE | PROCESSING
   const [scannedImage, setScannedImage] = useState(null);
 
@@ -145,7 +145,8 @@ export default function UploadScreen(onSuccess) {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
+    // Sử dụng thư viện chuẩn và loại bỏ các padding thừa để đồng bộ với App.js
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <View style={styles.header}>
         <Text style={styles.title}>Thêm Lịch Dạy</Text>
         <Text style={styles.subtitle}>
@@ -190,7 +191,7 @@ export default function UploadScreen(onSuccess) {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { padding: 20, paddingTop: 40, backgroundColor: "#FFF" },
+  header: { padding: 20, paddingTop: 10, backgroundColor: "#FFF" }, // Đã giảm paddingTop vì App.js đã lo phần Header
   title: { fontSize: 24, fontWeight: "bold", color: "#1C1C1E" },
   subtitle: { fontSize: 14, color: "#8E8E93", marginTop: 5 },
   content: { flex: 1, justifyContent: "center", padding: 20 },
