@@ -26,7 +26,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const API_BASE = "http://127.0.0.1:8000"; // Đổi thành IP LAN của bạn nếu chạy trên điện thoại thật (VD: http://192.168.1.5:8000)
+const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev"; // Đổi thành IP LAN của bạn nếu chạy trên điện thoại thật (VD: http://192.168.1.5:8000)
 
 // Hàm chuyển đổi data từ Backend -> Frontend
 const mapBEtoFE = (item) => ({

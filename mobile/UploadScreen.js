@@ -20,15 +20,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // Đã chuyển sang dùng thư viện chuẩn
 import DocumentScanner from "react-native-document-scanner-plugin";
+import { SafeAreaView } from "react-native-safe-area-context"; // Đã chuyển sang dùng thư viện chuẩn
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 // Đảm bảo trỏ đúng IP của máy tính tính chạy backend mạng LAN (không dùng localhost)
-const API_BASE = __DEV__ ? "http://127.0.0.1:8000" : "https://your-server.com";
+const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev";
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export default function UploadScreen({ onSuccess }) { // Lưu ý: đã thêm {} bọc onSuccess để nhận đúng props từ App.js truyền xuống
+export default function UploadScreen({ onSuccess }) {
+  // Lưu ý: đã thêm {} bọc onSuccess để nhận đúng props từ App.js truyền xuống
   const [status, setStatus] = useState("IDLE"); // IDLE | PROCESSING
   const [scannedImage, setScannedImage] = useState(null);
 
