@@ -50,7 +50,7 @@ export default function UploadPage({ onSuccess }) {
   const doUpload = async (file) => {
     setSt("progress");
     setProgress(20);
-    setProgressLabel("Đang tải file lên server...");
+    setProgressLabel("Đang tải file...");
 
     try {
       const formData = new FormData();
@@ -58,7 +58,7 @@ export default function UploadPage({ onSuccess }) {
 
       // 1. Phân tích OCR / PDF
       setProgress(50);
-      setProgressLabel("AI đang phân tích dữ liệu...");
+      setProgressLabel("Phân tích dữ liệu...");
       const uploadRes = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
         body: formData,
@@ -68,12 +68,12 @@ export default function UploadPage({ onSuccess }) {
 
       // 2. Chốt lưu thẳng vào DB
       setProgress(80);
-      setProgressLabel("Lưu vào Cơ sở dữ liệu...");
+      setProgressLabel("Lưu dữ liệu...");
       const confirmRes = await fetch(
         `${API_BASE}/api/upload/confirm/${uploadData.file_id}`,
         { method: "POST" },
       );
-      if (!confirmRes.ok) throw new Error("Lỗi lưu DB");
+      if (!confirmRes.ok) throw new Error("Lỗi lưu");
 
       // 3. Lấy lại bộ TKB mới nhất
       setProgress(100);

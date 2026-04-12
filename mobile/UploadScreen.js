@@ -38,20 +38,24 @@ export default function UploadScreen({ onSuccess }) {
     try {
       const { scannedImages, status } = await DocumentScanner.scanDocument({
         maxNumDocuments: 1,
-        letUserAdjustCrop: true, // Cho phép user chỉnh lại 4 góc nếu OS nhận nhầm
+        letUserAdjustCrop: true,
       });
 
       if (status === "success" && scannedImages && scannedImages.length > 0) {
         setScannedImage(scannedImages[0]);
-        uploadToServer(scannedImages[0], "image/jpeg");
+        // Gửi toàn bộ object thay vì chỉ gửi chuỗi URI
+        uploadToServer({
+          uri: scannedImages[0],
+          name: "scan_image.jpg", // Ép cứng đuôi ảnh
+          mimeType: "image/jpeg",
+        });
       }
     } catch (error) {
-      console.error("Scanner Error:", error);
       Alert.alert("Lỗi", "Không thể khởi động máy quét tài liệu.");
     }
   };
 
-  // 2. Hàm Upload File (PDF/Excel)
+  // 2. Upload File có sẵn (Trúng luồng .pdf hoặc .xlsx)
   const handleUploadFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -65,38 +69,42 @@ export default function UploadScreen({ onSuccess }) {
 
       if (!result.canceled && result.assets?.length > 0) {
         const file = result.assets[0];
-        uploadToServer(file.uri, file.mimeType || "application/pdf");
+        // Truyền TRỌN BỘ thông tin (Lấy chính xác file.name để giữ đuôi .pdf)
+        uploadToServer({
+          uri: file.uri,
+          name: file.name,
+          mimeType: file.mimeType || "application/pdf",
+        });
       }
     } catch (err) {
       console.error("Lỗi chọn file:", err);
     }
   };
 
-  // 3. Hàm gửi File/Ảnh lên Backend
-  const uploadToServer = async (fileUri, mimeType) => {
+  // 3. Gửi lên Server
+  const uploadToServer = async (fileData) => {
     setStatus("PROCESSING");
     try {
-      const filename = fileUri.split("/").pop() || "upload.jpg";
       const formData = new FormData();
       formData.append("file", {
-        uri: Platform.OS === "ios" ? fileUri.replace("file://", "") : fileUri,
-        name: filename,
-        type: mimeType,
+        uri:
+          Platform.OS === "ios"
+            ? fileData.uri.replace("file://", "")
+            : fileData.uri,
+        name: fileData.name || "upload.pdf", // Dùng tên gốc của file
+        type: fileData.mimeType,
       });
 
-      // 1. Upload & Phân tích
+      // 3.1 Upload & Phân tích
       const uploadRes = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
         body: formData,
       });
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok)
-        throw new Error(
-          uploadData.detail ||
-            "Hệ thống không đọc được ảnh/file này. Thầy chụp lại cho rõ nha!",
-        );
+        throw new Error(uploadData.detail || "Lỗi đọc ảnh/file.");
 
-      // 2. Chốt lưu vào Database
+      // 3.2 Chốt lưu vào Database
       const confirmRes = await fetch(
         `${API_BASE}/api/upload/confirm/${uploadData.file_id}`,
         { method: "POST" },
@@ -104,11 +112,10 @@ export default function UploadScreen({ onSuccess }) {
       const confirmData = await confirmRes.json();
       if (!confirmRes.ok) throw new Error("Lỗi khi lưu lịch");
 
-      // 3. Truy vấn lại toàn bộ DB mới nhất để render ra lịch
+      // 3.3 Tải lại danh sách lịch
       const getRes = await fetch(`${API_BASE}/api/sessions`);
       const allSessions = await getRes.json();
 
-      // Chuyển format BE -> FE
       const mappedData = allSessions.map((item) => ({
         id: item.id,
         ma: item.ma_mon,
@@ -122,19 +129,23 @@ export default function UploadScreen({ onSuccess }) {
         truong: item.truong || "OTHER",
         hk: item.hoc_ky || "HK2",
         status: item.status || "normal",
+        date_ranges: item.date_ranges || [], // Lấy mảng ngày để UI kiểm tra trùng
       }));
 
+      // 3.4 Hiển thị thông báo (Bao gồm thông báo trùng lịch chuẩn xác)
       if (confirmData.warnings && confirmData.warnings.length > 0) {
         Alert.alert(
           "Đã lưu lịch dạy!",
-          `Hệ thống phát hiện có sự trùng lặp:\n- ${confirmData.warnings[0]}\n\nVui lòng kiểm tra trên Thời khóa biểu.`,
+          `Hệ thống phát hiện trùng lặp:\n- ${confirmData.warnings[0]}`,
           [{ text: "Đã hiểu" }],
         );
       } else {
-        Alert.alert("Hoàn tất!", "Đã thêm lịch dạy mới thành công.");
+        Alert.alert(
+          "Hoàn tất!",
+          `Đã thêm thành công ${confirmData.sessions_saved} lớp học.`,
+        );
       }
 
-      // Đẩy mảng data mới nhất về App.js
       if (typeof onSuccess === "function") onSuccess(mappedData);
     } catch (error) {
       console.error("Upload Error:", error);
@@ -163,9 +174,7 @@ export default function UploadScreen({ onSuccess }) {
         {status === "PROCESSING" ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#FF3B30" />
-            <Text style={styles.loadingText}>
-              Đang gửi lên server và xử lý AI...
-            </Text>
+            <Text style={styles.loadingText}>Đang xử lý...</Text>
           </View>
         ) : (
           <View style={styles.buttonGroup}>
