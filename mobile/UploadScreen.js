@@ -24,9 +24,8 @@ import DocumentScanner from "react-native-document-scanner-plugin";
 import { SafeAreaView } from "react-native-safe-area-context"; // Đã chuyển sang dùng thư viện chuẩn
 
 // ─── Config ────────────────────────────────────────────────────────────────────
-// Đảm bảo trỏ đúng IP của máy tính tính chạy backend mạng LAN (không dùng localhost)
 const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev";
-
+// const API_BASE = "http://127.0.0.1:8000";
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function UploadScreen({ onSuccess }) {
   // Lưu ý: đã thêm {} bọc onSuccess để nhận đúng props từ App.js truyền xuống

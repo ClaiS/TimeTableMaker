@@ -26,7 +26,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev"; // Đổi thành IP LAN của bạn nếu chạy trên điện thoại thật (VD: http://192.168.1.5:8000)
+const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev";
+// const API_BASE = "http://127.0.0.1:8000";
 
 // Hàm chuyển đổi data từ Backend -> Frontend
 const mapBEtoFE = (item) => ({
@@ -1108,15 +1109,14 @@ function NotifScreen() {
       key: "24h",
       label: "Nhắc trước 24 giờ",
       sub: "1 ngày trước mỗi buổi dạy",
-      on: true,
+      on: false,
     },
     {
       key: "1h",
       label: "Nhắc trước 1 giờ",
       sub: "1 tiếng trước mỗi buổi",
-      on: true,
-    },
-    { key: "sfx", label: "Âm thanh", sub: "Phát âm khi có nhắc", on: false },
+      on: false,
+    }
   ]);
 
   const toggle = async (key) => {
