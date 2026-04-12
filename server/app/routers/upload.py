@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta
 
 from app.database import get_db
 # ĐÃ IMPORT THÊM SessionDateRange từ models.py
@@ -173,134 +174,110 @@ async def confirm_upload(
 
     sessions_to_save = result.sessions
     if selected_indices is not None:
-        sessions_to_save = [
-            result.sessions[i]
-            for i in selected_indices
-            if 0 <= i < len(result.sessions)
-        ]
+        sessions_to_save = [result.sessions[i] for i in selected_indices if 0 <= i < len(result.sessions)]
 
-    # --- KHỞI TẠO BIẾN ĐẾM VÀ MẢNG CẢNH BÁO ---
+    # 1. KHỬ TRÙNG LẶP DO AI (Deduplication)
+    unique_sessions = []
+    seen_keys = set()
+    for s in sessions_to_save:
+        sig = f"{s.ma_mon}_{s.thu}_{s.tiet_bat_dau}_{s.nhom}"
+        if sig not in seen_keys:
+            seen_keys.add(sig)
+            unique_sessions.append(s)
+    sessions_to_save = unique_sessions
+
     saved_count = 0
     warnings = []
 
     for s in sessions_to_save:
-        # 1. KIỂM TRA TRÙNG LỊCH (Lấy 1 dòng đầu tiên để tránh lỗi MultipleResultsFound)
-        tiet_ket_thuc_du_kien = s.tiet_bat_dau + s.so_tiet - 1
+        # --- BƯỚC A: TÍNH TOÁN TẤT CẢ CÁC NGÀY DẠY CỤ THỂ ---
+        new_actual_dates = []
+        target_weekday = s.thu - 2 # Python: 0=Thứ 2, 6=Chủ nhật
         
-        # Bước 1.1: Tìm các môn trùng Thứ và Tiết
-        overlap_query = select(TeachingSession).where(
-            TeachingSession.thu == s.thu,
-            TeachingSession.tiet_bat_dau <= tiet_ket_thuc_du_kien,
-            TeachingSession.tiet_ket_thuc >= s.tiet_bat_dau,
-            TeachingSession.status != 'cancelled'
-        )
-        overlap_result = await db.execute(overlap_query)
-        potential_overlaps = overlap_result.scalars().all()
-
-        has_conflict = False
-        conflict_name = ""
-
-        if potential_overlaps:
-            # Parse ngày tháng của môn học MỚI chuẩn bị lưu
-            new_ranges = []
-            if hasattr(s, 'date_ranges') and s.date_ranges:
-                for dr in s.date_ranges:
-                    parts = [p.strip() for p in dr.split('-')]
-                    try:
-                        if len(parts) == 2:
-                            new_ranges.append((datetime.strptime(parts[0], "%d/%m/%Y").date(), datetime.strptime(parts[1], "%d/%m/%Y").date()))
-                        elif len(parts) == 1:
-                            d = datetime.strptime(parts[0], "%d/%m/%Y").date()
-                            new_ranges.append((d, d))
-                    except ValueError:
-                        pass
-            
-            # Bước 1.2: Lọc lại xem có thực sự đụng nhau về Ngày/Tháng không
-            for old_session in potential_overlaps:
-                old_ranges_query = await db.execute(select(SessionDateRange).where(SessionDateRange.session_id == old_session.id))
-                old_ranges_db = old_ranges_query.scalars().all()
-
-                if not new_ranges or not old_ranges_db:
-                    # Nếu 1 trong 2 không có ngày cụ thể, mặc định là trùng để cảnh báo an toàn
-                    has_conflict = True
-                    conflict_name = old_session.ten_mon
-                    break
-                
-                # So sánh giao nhau (Intersection)
-                for nr in new_ranges:
-                    for or_db in old_ranges_db:
-                        # Công thức: startA <= endB và startB <= endA
-                        if nr[0] <= or_db.ngay_ket_thuc and or_db.ngay_bat_dau <= nr[1]:
-                            has_conflict = True
-                            conflict_name = old_session.ten_mon
-                            break
-                    if has_conflict:
-                        break
-                if has_conflict:
-                    break
-
-        if has_conflict:
-            warnings.append(f"Môn '{s.ten_mon}' trùng giờ với '{conflict_name}' (Thứ {s.thu})")
-
-        # 2. LƯU MÔN HỌC MỚI VÀO DB BÌNH THƯỜNG
-        new_session = TeachingSession(
-            ma_mon        = s.ma_mon,
-            ten_mon       = s.ten_mon,
-            thu           = s.thu,
-            tiet_bat_dau  = s.tiet_bat_dau,
-            so_tiet       = s.so_tiet,
-            phong         = s.phong,
-            nhom          = s.nhom,
-            to_th         = s.to_th,
-            tin_chi       = s.tin_chi,
-            ten_lop       = s.ten_lop,
-            si_so         = s.si_so,
-            truong        = s.truong,
-            hoc_ky        = s.hoc_ky,
-            status        = s.status,
-            source_file_id= file_id,
-        )
-        db.add(new_session)
-        await db.flush() # Flush để PostgreSQL cấp ID ngay
-    
-        saved_count += 1
-
-        # 3. LƯU KHOẢNG THỜI GIAN (DATE RANGES)
         if hasattr(s, 'date_ranges') and s.date_ranges:
             for dr in s.date_ranges:
                 parts = [p.strip() for p in dr.split('-')]
                 try:
-                    if len(parts) == 2:
-                        start_date = datetime.strptime(parts[0], "%d/%m/%Y").date()
-                        end_date = datetime.strptime(parts[1], "%d/%m/%Y").date()
-                    elif len(parts) == 1:
-                        start_date = datetime.strptime(parts[0], "%d/%m/%Y").date()
-                        end_date = start_date 
-                    else:
-                        continue
+                    start_d = datetime.strptime(parts[0], "%d/%m/%Y").date()
+                    end_d = datetime.strptime(parts[1], "%d/%m/%Y").date() if len(parts) == 2 else start_d
+                    
+                    # Tìm ngày đúng với 'Thứ' đầu tiên
+                    days_ahead = target_weekday - start_d.weekday()
+                    if days_ahead < 0: days_ahead += 7
+                    curr_d = start_d + timedelta(days=days_ahead)
+                    
+                    while curr_d <= end_d:
+                        new_actual_dates.append(curr_d)
+                        curr_d += timedelta(days=7)
+                except ValueError: continue
 
-                    db_date = SessionDateRange(
-                        session_id    = new_session.id,
-                        ngay_bat_dau  = start_date,
-                        ngay_ket_thuc = end_date
-                    )
-                    db.add(db_date)
-                except ValueError:
-                    continue # Bỏ qua nếu lỗi format ngày
+        # --- BƯỚC B: KIỂM TRÀ TRÙNG LỊCH (SQL JOIN SIÊU NHANH) ---
+        tiet_ket_thuc_du_kien = s.tiet_bat_dau + s.so_tiet - 1
+        has_conflict = False
+        conflict_info = ""
 
-    # 4. CẬP NHẬT TRẠNG THÁI FILE UPLOAD
-    await db.execute(
-        update(UploadedFile)
-        .where(UploadedFile.id == file_id)
-        .values(status="success", session_count=saved_count)
-    )
+        if new_actual_dates:
+            # Query: Tìm bất kỳ ngày nào trong DB trùng với danh sách ngày mới VÀ trùng tiết
+            from app.models.models import SessionDate # Đảm bảo import đúng
+            
+            conflict_query = (
+                select(TeachingSession.ten_mon, SessionDate.ngay_day)
+                .join(SessionDate)
+                .where(
+                    SessionDate.ngay_day.in_(new_actual_dates),
+                    TeachingSession.tiet_bat_dau <= tiet_ket_thuc_du_kien,
+                    TeachingSession.tiet_ket_thuc >= s.tiet_bat_dau,
+                    TeachingSession.status != 'cancelled'
+                )
+            )
+            conflict_res = await db.execute(conflict_query)
+            conflict_item = conflict_res.first()
+            
+            if conflict_item:
+                has_conflict = True
+                # Chỉ lấy đúng format Ngày/Tháng/Năm (DD/MM/YYYY)
+                ngay_trung = conflict_item.ngay_day.strftime('%d/%m/%Y')
+                conflict_info = f"môn '{conflict_item.ten_mon}' vào ngày {ngay_trung}"
+
+        if has_conflict:
+            warnings.append(f"Môn '{s.ten_mon}' trùng lịch với {conflict_info}")
+
+        # --- BƯỚC C: LƯU VÀO DATABASE ---
+        # 1. Lưu TeachingSession
+        new_session = TeachingSession(
+            ma_mon=s.ma_mon, ten_mon=s.ten_mon, thu=s.thu,
+            tiet_bat_dau=s.tiet_bat_dau, so_tiet=s.so_tiet,
+            phong=s.phong, nhom=s.nhom, to_th=s.to_th,
+            tin_chi=s.tin_chi, ten_lop=s.ten_lop, si_so=s.si_so,
+            truong=s.truong, hoc_ky=s.hoc_ky, status=s.status,
+            source_file_id=file_id
+        )
+        db.add(new_session)
+        await db.flush() # Lấy ID
+
+        # 2. Lưu vào bảng SessionDateRange (Để FE hiển thị text cũ)
+        if hasattr(s, 'date_ranges'):
+            for dr in s.date_ranges:
+                parts = [p.strip() for p in dr.split('-')]
+                try:
+                    sd = datetime.strptime(parts[0], "%d/%m/%Y").date()
+                    ed = datetime.strptime(parts[1], "%d/%m/%Y").date() if len(parts) == 2 else sd
+                    db.add(SessionDateRange(session_id=new_session.id, ngay_bat_dau=sd, ngay_ket_thuc=ed))
+                except: continue
+
+        # 3. 🌟 QUAN TRỌNG: Lưu TỪNG NGAY CỤ THỂ vào bảng mới
+        from app.models.models import SessionDate
+        for d in new_actual_dates:
+            db.add(SessionDate(session_id=new_session.id, ngay_day=d))
+        
+        await db.flush()
+        saved_count += 1
+
+    # Kết thúc
+    await db.execute(update(UploadedFile).where(UploadedFile.id == file_id).values(status="success", session_count=saved_count))
     await db.commit()
-
     _preview_cache.pop(file_id, None)
-
-    # ĐÂY CHÍNH LÀ DÒNG BỊ THIẾU GÂY RA LỖI CHO BẠN
     return ConfirmResponse(file_id=file_id, sessions_saved=saved_count, warnings=warnings)
-
 @router.delete("/{file_id}", status_code=204)
 async def cancel_upload(file_id: int, db: AsyncSession = Depends(get_db)):
     _preview_cache.pop(file_id, None)

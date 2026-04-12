@@ -60,6 +60,7 @@ class TeachingSession(Base):
     created_at     = Column(TIMESTAMP, server_default=func.now())
     updated_at     = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     date_ranges_rel = relationship("SessionDateRange", backref="session", lazy="selectin", cascade="all, delete-orphan")
+    specific_dates = relationship("SessionDate", backref="session", lazy="selectin", cascade="all, delete-orphan")
 
     @property
     def date_ranges(self):
@@ -77,3 +78,17 @@ class SessionDateRange(Base):
     session_id    = Column(Integer, ForeignKey("teaching_sessions.id", ondelete="CASCADE"), nullable=False)
     ngay_bat_dau  = Column(Date, nullable=False)
     ngay_ket_thuc = Column(Date, nullable=False)
+
+class SessionDate(Base):
+    """
+    Bảng này lưu TỪNG NGÀY DẠY CỤ THỂ của một lớp học.
+    Ví dụ: Lớp A học 5 tuần -> Bảng này sẽ có 5 dòng tương ứng với 5 ngày.
+    """
+    __tablename__ = "session_dates"
+
+    id         = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(Integer, ForeignKey("teaching_sessions.id", ondelete="CASCADE"), nullable=False)
+    ngay_day   = Column(Date, nullable=False)  # Lưu ngày chính xác (VD: 2026-02-07)
+    
+    # Tương lai có thể thêm cột trạng thái cho từng ngày ở đây: 
+    # status = Column(String(20), default="normal") # normal | cancelled_1_day | makeup
