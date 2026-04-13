@@ -15,7 +15,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import UploadScreen from "./UploadScreen";
 
 Notifications.setNotificationHandler({
@@ -108,7 +112,7 @@ function doDateRangesOverlap(rangesA, rangesB) {
     for (const b of pB) {
       // Công thức trùng lặp: Bắt đầu A <= Kết thúc B VÀ Bắt đầu B <= Kết thúc A
       if (a.start <= b.end && b.start <= a.end) {
-        return true; 
+        return true;
       }
     }
   }
@@ -317,6 +321,7 @@ function detectSemester(classes) {
 // ════════════════════════════════════════
 function DetailSheet({ cls, onClose, onEdit, onDelete, onCancel, onRestore }) {
   if (!cls) return null;
+  const insets = useSafeAreaInsets();
   const cl = getColor(cls);
   const ts = TT[cls.tb - 1],
     te = TT[cls.tk - 1];
@@ -366,7 +371,7 @@ function DetailSheet({ cls, onClose, onEdit, onDelete, onCancel, onRestore }) {
           ))}
         </ScrollView>
         {/* Actions */}
-        <View style={st.sheetActions}>
+        <View style={[st.sheetActions, { paddingBottom: 8 + insets.bottom }]}>
           <TouchableOpacity style={[st.sheetBtn, st.btnEdit]} onPress={onEdit}>
             <Text style={st.btnEditTx}>️ Sửa</Text>
           </TouchableOpacity>
@@ -389,7 +394,7 @@ function DetailSheet({ cls, onClose, onEdit, onDelete, onCancel, onRestore }) {
             <Text style={st.btnDelTx}>️ Xóa</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={st.sheetClose} onPress={onClose}>
+        <TouchableOpacity style={[st.sheetClose, { marginBottom: insets.bottom }]}>
           <Text style={st.sheetCloseTx}>Đóng</Text>
         </TouchableOpacity>
       </View>
@@ -416,6 +421,7 @@ const BLANK = {
 
 function AEModal({ init, onSave, onClose }) {
   const [f, setF] = useState(init ? { ...init } : { ...BLANK });
+  const insets = useSafeAreaInsets();
   const [schoolQ, setSchoolQ] = useState(init?.truong || "HUTECH");
   const [showDrop, setShowDrop] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -648,7 +654,7 @@ function AEModal({ init, onSave, onClose }) {
               </View>
             )}
           </ScrollView>
-          <View style={st.aeFooter}>
+          <View style={[st.aeFooter, { paddingBottom: 14 + insets.bottom }]}>
             <TouchableOpacity style={st.btnSecondary} onPress={onClose}>
               <Text style={st.btnSecondaryTx}>Hủy</Text>
             </TouchableOpacity>
@@ -1116,7 +1122,7 @@ function NotifScreen() {
       label: "Nhắc trước 1 giờ",
       sub: "1 tiếng trước mỗi buổi",
       on: false,
-    }
+    },
   ]);
 
   const toggle = async (key) => {
@@ -1424,7 +1430,7 @@ export default function App() {
         c.tk >= targetCls.tb &&
         c.status !== "cancelled" &&
         targetCls.status !== "cancelled" &&
-        doDateRangesOverlap(c.date_ranges, targetCls.date_ranges) // <--- ÉP KIỂM TRA ĐỤNG NGAU VỀ NGÀY THÁNG
+        doDateRangesOverlap(c.date_ranges, targetCls.date_ranges), // <--- ÉP KIỂM TRA ĐỤNG NGAU VỀ NGÀY THÁNG
     );
   };
 
