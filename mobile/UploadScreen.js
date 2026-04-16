@@ -13,9 +13,7 @@ import {
 import DocumentScanner from "react-native-document-scanner-plugin";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_BASE = __DEV__
-  ? "https://your-ngrok-url.ngrok-free.app"
-  : "https://your-server.com";
+const API_BASE = "https://bucked-starting-tapeless.ngrok-free.dev";
 
 export default function UploadScreen({ onSuccess }) {
   const [status, setStatus] = useState("IDLE"); // IDLE | PROCESSING
